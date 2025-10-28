@@ -7,13 +7,10 @@ public class DayUI : MonoBehaviour
 
     void Start()
     {
-        UpdateDayLabel();
-    }
-
-    void OnEnable()
-    {
         if (TimeManager.I != null)
             TimeManager.I.OnDayChanged += UpdateDayLabel;
+
+        UpdateDayLabel();
     }
 
     void OnDisable()
