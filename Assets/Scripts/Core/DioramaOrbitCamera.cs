@@ -28,8 +28,8 @@ public class DioramaOrbitCamera : MonoBehaviour
     [Header("Pan")]
     Vector3 focus;
     Vector3 targetFocus;
-    public float panSensitivity = 1.2f;
-    public float keyboardPanSpeed = 1.4f;
+    public float panSensitivity = 1f;
+    public float keyboardPanSpeed = 10f;
     public float panSmooth = 10f;
 
     Camera cam;
@@ -109,24 +109,39 @@ public class DioramaOrbitCamera : MonoBehaviour
             Vector3 right = transform.right;
             Vector3 forward = Vector3.Cross(right, Vector3.up).normalized;
 
-            targetFocus += (-right * delta.x + -forward * delta.y) * panSensitivity * Time.deltaTime;
+            // Zoom-scaled panning
+            float zoomFactor = Mathf.Lerp(0.5f, 2f, (distance - minDistance) / (maxDistance - minDistance));
+
+            targetFocus += (-right * delta.x + -forward * delta.y) * panSensitivity * zoomFactor;
         }
     }
+
+
 
     void HandlePanKeyboard()
     {
         Vector3 right = transform.right;
         Vector3 forward = Vector3.Cross(right, Vector3.up).normalized;
 
+        // Same zoom-based factor we use for mouse pan
+        float zoomFactor = Mathf.Lerp(
+            0.5f,          // slow movement when close
+            2f,            // fast movement when zoomed out
+            (distance - minDistance) / (maxDistance - minDistance)
+        );
+
+        float speed = keyboardPanSpeed * zoomFactor * Time.deltaTime;
+
         if (Input.GetKey(KeyCode.W))
-            targetFocus += forward * keyboardPanSpeed * Time.deltaTime;
+            targetFocus += forward * speed;
         if (Input.GetKey(KeyCode.S))
-            targetFocus -= forward * keyboardPanSpeed * Time.deltaTime;
+            targetFocus -= forward * speed;
         if (Input.GetKey(KeyCode.A))
-            targetFocus -= right * keyboardPanSpeed * Time.deltaTime;
+            targetFocus -= right * speed;
         if (Input.GetKey(KeyCode.D))
-            targetFocus += right * keyboardPanSpeed * Time.deltaTime;
+            targetFocus += right * speed;
     }
+
 
     // F = Focus zoom      R = Reset zoom + camera position
     void HandleQuickZoom()

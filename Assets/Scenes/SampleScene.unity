@@ -442,16 +442,16 @@ MonoBehaviour:
   yaw: 35
   pitch: 35
   pitchLimits: {x: 20, y: 55}
-  orbitSpeed: 7
-  rotateSensitivity: 140
+  orbitSpeed: 8
+  rotateSensitivity: 160
   keyboardOrbitSpeed: 50
   distance: 20
   minDistance: 10
   maxDistance: 60
   zoomSensitivity: 1
   zoomSmooth: 10
-  panSensitivity: 5
-  keyboardPanSpeed: 5
+  panSensitivity: 1
+  keyboardPanSpeed: 10
   panSmooth: 10
 --- !u!114 &330585549
 MonoBehaviour:
