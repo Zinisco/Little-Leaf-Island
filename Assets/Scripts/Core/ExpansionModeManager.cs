@@ -128,10 +128,18 @@ public class ExpansionModeManager : MonoBehaviour
                     var costCanvas = expansionTile.transform.Find("CostCanvas");
                     if (costCanvas != null)
                     {
-                        int distance = Mathf.RoundToInt(Vector2Int.Distance(Vector2Int.zero, target));
-                        int tileCost = Mathf.RoundToInt(TileManager.I.expansionCost * Mathf.Pow(1.2f, distance));
+                        // --- Match TileManager’s cost curve ---
+                        int totalOwned = TileManager.I.GetAllTiles().Count;
 
-                        // Look specifically for the CostLabel child
+                        float baseCost = TileManager.I.expansionCost;  // base = 25
+                        float growthRate = 1.05f;
+                        float curveStrength = 0.85f;
+                        float earlyDiscount = 0.85f;
+
+                        float scaledCost = baseCost * earlyDiscount * Mathf.Pow(growthRate, Mathf.Pow(totalOwned, curveStrength));
+                        int tileCost = Mathf.Min(Mathf.RoundToInt(scaledCost), 50000);
+
+                        // --- Update UI text ---
                         var costLabel = costCanvas.transform.Find("CostLabel");
                         if (costLabel != null)
                         {
@@ -141,14 +149,9 @@ public class ExpansionModeManager : MonoBehaviour
                                 text.text = $"{tileCost}";
 
                                 if (EconomySystem.I.Coins >= tileCost)
-                                {
-                                    text.color = Color.black; // readable on bright ground
-                                }
+                                    text.color = Color.black;
                                 else
-                                {
-                                    text.color = new Color(0.3f, 0f, 0f); // dark red (less harsh, still readable)
-                                }
-
+                                    text.color = new Color(0.3f, 0f, 0f);
                             }
                         }
 
@@ -166,6 +169,7 @@ public class ExpansionModeManager : MonoBehaviour
             ClearHoverHighlight();
         }
     }
+
 
     void ClearHoverHighlight()
     {

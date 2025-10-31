@@ -2056,7 +2056,7 @@ MonoBehaviour:
   wetSoilPrefab: {fileID: 2686946290488405093, guid: 12148302940752e4b8fff81facbce978, type: 3}
   seededSoilDryPrefab: {fileID: 2368337326402377750, guid: 3102fad845bd75f4d93cbf111ebd9d54, type: 3}
   seededSoilWetPrefab: {fileID: 2368337326402377750, guid: 295a6691f4edaac46a3d98ca2d70e592, type: 3}
-  expansionCost: 50
+  expansionCost: 20
   carrotCrop: {fileID: 11400000, guid: fb60e0507e6db25488f95dd84a5b4dc0, type: 2}
   islandRoot: {fileID: 135616883}
   hoeFXPrefab: {fileID: 3105645563005381861, guid: a060af4aebc49354bbc8638b6e6a79ea, type: 3}

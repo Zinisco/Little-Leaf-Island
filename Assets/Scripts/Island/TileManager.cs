@@ -15,7 +15,7 @@ public class TileManager : MonoBehaviour
     public GameObject seededSoilWetPrefab;
 
     [Header("Expansion Settings")]
-    public int expansionCost = 25; // configurable cost per tile
+    public int expansionCost = 20; // configurable cost per tile
 
     [Header("Crops")]
     public CropDefinition carrotCrop;
@@ -108,21 +108,20 @@ public class TileManager : MonoBehaviour
             return false;
         }
 
-        // --- Smarter expansion cost curve ---
-        int distance = Mathf.RoundToInt(Vector2Int.Distance(Vector2Int.zero, new Vector2Int(x, y)));
+        // --- Expansion cost based on total tiles owned ---
+        int totalOwned = tiles.Count;
 
-        // Start low, curve smoothly, and cap at 50,000
-        // You can tweak baseMultiplier and curveStrength to adjust pacing.
-        float baseCost = expansionCost;      // usually 25
-        float baseMultiplier = 1.12f;        // gentler growth (was 1.2f)
-        float curveStrength = 0.75f;         // how “curved” the growth feels
+        // Tunable base settings
+        float baseCost = expansionCost;     // base = 20
+        float growthRate = 1.05f;           // gentle exponential scaling per tile
+        float curveStrength = 0.85f;        // how sharply it accelerates
+        float earlyDiscount = 0.85f;        // keeps early expansion affordable
 
-        float scaledCost = baseCost * Mathf.Pow(baseMultiplier + distance * 0.01f, Mathf.Pow(distance, curveStrength));
+        // Compute cost: grows gently for early game, ramps up mid-to-late game
+        float scaledCost = baseCost * earlyDiscount * Mathf.Pow(growthRate, Mathf.Pow(totalOwned, curveStrength));
+
+        // Clamp to 50,000 max
         int tileCost = Mathf.Min(Mathf.RoundToInt(scaledCost), 50000);
-
-
-
-        Debug.Log($"Tile ({x},{y}) is {distance} units from center. Cost: {tileCost}");
 
         // Spend coins
         if (!EconomySystem.I.SpendCoins(tileCost))
