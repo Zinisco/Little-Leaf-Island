@@ -203,8 +203,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -505,8 +505,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -86, y: 40}
-  m_SizeDelta: {x: 150, y: 50}
+  m_AnchoredPosition: {x: -76.2, y: 41}
+  m_SizeDelta: {x: 110, y: 45}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &349032184
 MonoBehaviour:
@@ -1583,7 +1583,8 @@ MonoBehaviour:
   grassPrefab: {fileID: 7109919125160964749, guid: ae7ad4e9bc69ed34b8de5d1a8d505cae, type: 3}
   soilPrefab: {fileID: 2686946290488405093, guid: 5569752f1b893624fa8dc47d8a96522a, type: 3}
   wetSoilPrefab: {fileID: 2686946290488405093, guid: 12148302940752e4b8fff81facbce978, type: 3}
-  sproutPrefab: {fileID: 0}
+  seededSoilDryPrefab: {fileID: 2368337326402377750, guid: 3102fad845bd75f4d93cbf111ebd9d54, type: 3}
+  seededSoilWetPrefab: {fileID: 2368337326402377750, guid: 295a6691f4edaac46a3d98ca2d70e592, type: 3}
   carrotCrop: {fileID: 11400000, guid: fb60e0507e6db25488f95dd84a5b4dc0, type: 2}
   islandRoot: {fileID: 135616883}
   hoeFXPrefab: {fileID: 3105645563005381861, guid: a060af4aebc49354bbc8638b6e6a79ea, type: 3}

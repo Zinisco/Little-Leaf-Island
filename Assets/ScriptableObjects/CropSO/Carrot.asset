@@ -15,10 +15,10 @@ MonoBehaviour:
   id: carrot
   displayName: Carrot
   stagePrefabs:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 17766481119238974, guid: a32eab24d079b614c97b9b18fe3f7641, type: 3}
+  - {fileID: 9113694007818311840, guid: 33c7a952d6283954d9030634f1b4ef18, type: 3}
+  - {fileID: 516852351946466912, guid: 80f0f4ec4a34c1c45885f8cefb5010f3, type: 3}
+  - {fileID: 789128798731476933, guid: cf3e3aad89acbef479065eb94405f750, type: 3}
   daysToGrow: 4
   regrows: 0
   sellPrice: 5

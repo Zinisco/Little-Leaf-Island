@@ -10,9 +10,10 @@ public class TileManager : MonoBehaviour
     public GameObject grassPrefab;
     public GameObject soilPrefab;
     public GameObject wetSoilPrefab;
+    public GameObject seededSoilDryPrefab;
+    public GameObject seededSoilWetPrefab;
 
     [Header("Crops")]
-    public GameObject sproutPrefab;
     public CropDefinition carrotCrop;
 
     [Header("Island Root")]

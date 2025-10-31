@@ -20,6 +20,9 @@ public class Tile : MonoBehaviour
     DateTime lastWaterTime;        // last day watered
 
     GameObject plantedObject = null;
+    Transform cropAnchor;
+    float randomYRotation;
+
 
     public void OnClicked()
     {
@@ -67,12 +70,41 @@ public class Tile : MonoBehaviour
 
     void CheckDayUpdate()
     {
+        // Let the crop try to grow first
         if (crop != null)
             CheckGrowth();
         else
             CheckSoilRevert();
-    }
 
+        // After growth checks, dry any wet soil
+        if (state == State.WetSoil)
+        {
+            state = State.Soil;
+
+            // Pick correct visual based on whether a crop exists
+            if (crop != null)
+            {
+                if (currentVisual != null)
+                    Destroy(currentVisual);
+
+                currentVisual = Instantiate(
+                    TileManager.I.seededSoilDryPrefab,
+                    transform.position,
+                    Quaternion.identity,
+                    transform
+                );
+
+                UpdateCropAnchor();
+                RefreshCropVisual();
+            }
+            else
+            {
+                UpdateVisual();
+            }
+
+            Debug.Log($"Soil at {x},{y} dried out for the new day.");
+        }
+    }
 
 
 
@@ -89,7 +121,9 @@ public class Tile : MonoBehaviour
 
     void PlantSeed()
     {
-        if (state != State.WetSoil || crop != null) return;
+        // allow planting on both dry and wet soil
+        if ((state != State.Soil && state != State.WetSoil) || crop != null)
+            return;
 
         crop = TileManager.I.carrotCrop;
         growthStage = 0;
@@ -97,7 +131,26 @@ public class Tile : MonoBehaviour
 
         Debug.Log($"Planted {crop.displayName} at {x},{y}");
 
+        // Replace soil with correct seeded soil visual
+        if (currentVisual != null)
+            Destroy(currentVisual);
+
+        GameObject seededPrefab = (state == State.WetSoil)
+            ? TileManager.I.seededSoilWetPrefab
+            : TileManager.I.seededSoilDryPrefab;
+
+        currentVisual = Instantiate(
+     seededPrefab,
+     transform.position,
+     Quaternion.identity,
+     transform
+ );
+
+        UpdateCropAnchor();
+
+        // Spawn crop on top using the new anchor
         SpawnCropVisual();
+
     }
 
 
@@ -108,14 +161,31 @@ public class Tile : MonoBehaviour
             state = State.WetSoil;
             lastWaterTime = TimeManager.I.currentDate;
 
-            UpdateVisual();
+            // If there’s a crop planted, use wet seeded soil
+            if (crop != null)
+            {
+                if (currentVisual != null)
+                    Destroy(currentVisual);
 
-            if (crop != null) // refresh crop look if already planted
+                currentVisual = Instantiate(
+                    TileManager.I.seededSoilWetPrefab,
+                    transform.position,
+                    Quaternion.identity,
+                    transform
+                );
+
+                UpdateCropAnchor();
                 RefreshCropVisual();
+            }
+            else
+            {
+                UpdateVisual();
+            }
 
             PlayWaterFX();
         }
     }
+
 
 
     // ----------------------------------------------------------
@@ -126,13 +196,24 @@ public class Tile : MonoBehaviour
     {
         DateTime now = TimeManager.I.currentDate;
 
+        // Only grow if the soil is still wet today
+        if (state != State.WetSoil)
+        {
+            Debug.Log($"Crop at {x},{y} did not grow today — soil is dry!");
+            return;
+        }
+
+        // Prevent multiple growths per day
         if (lastWaterTime.Date < now.Date)
         {
             lastWaterTime = now;
             growthStage = Mathf.Min(growthStage + 1, crop.StageCount - 1);
             RefreshCropVisual();
+
+            Debug.Log($"Crop at {x},{y} grew to stage {growthStage}");
         }
     }
+
 
     void TryHarvest()
     {
@@ -142,21 +223,39 @@ public class Tile : MonoBehaviour
         Debug.Log($"Harvested {crop.displayName} at {x},{y}! +{crop.sellPrice} coins");
 
         EconomySystem.I.AddCoins(crop.sellPrice);
-
         Destroy(plantedObject);
 
         if (crop.regrows)
         {
+            // regrow crops drop to one stage before mature
             growthStage = crop.StageCount - 2;
             SpawnCropVisual();
         }
         else
         {
+            // Reset soil, not grass
             crop = null;
             state = State.Soil;
-            UpdateVisual();
+            lastShovelTime = TimeManager.I.currentDate;
+
+            // Show plain soil (not seeded)
+            if (currentVisual != null)
+                Destroy(currentVisual);
+
+            currentVisual = Instantiate(
+                TileManager.I.soilPrefab,
+                transform.position,
+                Quaternion.identity,
+                transform
+            );
+
+            UpdateCropAnchor();
+
+            Debug.Log($"Tile at {x},{y} reverted to soil after harvest.");
         }
     }
+
+
 
 
     // ----------------------------------------------------------
@@ -167,22 +266,22 @@ public class Tile : MonoBehaviour
     {
         DateTime now = TimeManager.I.currentDate;
 
-        if (state == State.Soil &&
-            lastShovelTime.Date < now.Date &&
-            crop == null)
+        // Only revert if no crop
+        if (crop != null) return;
+
+        if (state == State.Soil && lastShovelTime.Date < now.Date)
         {
             state = State.Grass;
             UpdateVisual();
         }
 
-        if (state == State.WetSoil &&
-            lastWaterTime.Date < now.Date &&
-            crop == null)
+        if (state == State.WetSoil && lastWaterTime.Date < now.Date)
         {
             state = State.Soil;
             UpdateVisual();
         }
     }
+
 
 
     // ----------------------------------------------------------
@@ -200,13 +299,11 @@ public class Tile : MonoBehaviour
                              state == State.Soil ? TileManager.I.soilPrefab :
                              TileManager.I.grassPrefab);
 
-        currentVisual = Instantiate(
-            prefab,
-            transform.position,
-            Quaternion.identity,
-            transform
-        );
+        currentVisual = Instantiate(prefab, transform.position, Quaternion.identity, transform);
+
+        UpdateCropAnchor();
     }
+
 
 
     public void ShowHighlight(GameObject highlightPrefab)
@@ -243,26 +340,68 @@ public class Tile : MonoBehaviour
         if (plantedObject != null)
             Destroy(plantedObject);
 
+        Vector3 spawnPos = (cropAnchor != null)
+            ? cropAnchor.position
+            : transform.position + Vector3.up * 0.1f;
+
+        if (growthStage == 0)
+            randomYRotation = UnityEngine.Random.Range(0f, 360f);
+
+        Quaternion randomRot = Quaternion.Euler(0, randomYRotation, 0);
+
         plantedObject = Instantiate(
             crop.stagePrefabs[growthStage],
-            transform.position + Vector3.up * 0.1f,
-            Quaternion.identity,
+            spawnPos,
+            randomRot,
             transform
         );
     }
+
+
 
     void RefreshCropVisual()
     {
         if (plantedObject != null)
             Destroy(plantedObject);
 
+        if (cropAnchor == null)      // attempt recovery
+            UpdateCropAnchor();
+
+        Vector3 spawnPos = (cropAnchor != null)
+            ? cropAnchor.position
+            : transform.position + Vector3.up * 0.1f;
+
+        // Keep the same stored rotation across all stages
+        Quaternion randomRot = Quaternion.Euler(0, randomYRotation, 0);
+
         plantedObject = Instantiate(
             crop.stagePrefabs[growthStage],
-            transform.position + Vector3.up * 0.1f,
-            Quaternion.identity,
+            spawnPos,
+            randomRot,
             transform
         );
     }
+
+
+
+    void UpdateCropAnchor()
+    {
+        cropAnchor = null;
+        if (currentVisual != null)
+        {
+            // try direct child first
+            var direct = currentVisual.transform.Find("CropAnchor");
+            if (direct != null) { cropAnchor = direct; return; }
+
+            // fallback: search all children (handles nested anchors)
+            foreach (var t in currentVisual.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == "CropAnchor") { cropAnchor = t; break; }
+            }
+        }
+    }
+
+
 
     void PlayHoeFX()
     {
