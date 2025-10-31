@@ -15,7 +15,7 @@ public class TileManager : MonoBehaviour
     public GameObject seededSoilWetPrefab;
 
     [Header("Expansion Settings")]
-    public int expansionCost = 50; // configurable cost per tile
+    public int expansionCost = 25; // configurable cost per tile
 
     [Header("Crops")]
     public CropDefinition carrotCrop;
@@ -108,8 +108,24 @@ public class TileManager : MonoBehaviour
             return false;
         }
 
+        // --- Smarter expansion cost curve ---
+        int distance = Mathf.RoundToInt(Vector2Int.Distance(Vector2Int.zero, new Vector2Int(x, y)));
+
+        // Start low, curve smoothly, and cap at 50,000
+        // You can tweak baseMultiplier and curveStrength to adjust pacing.
+        float baseCost = expansionCost;      // usually 25
+        float baseMultiplier = 1.12f;        // gentler growth (was 1.2f)
+        float curveStrength = 0.75f;         // how “curved” the growth feels
+
+        float scaledCost = baseCost * Mathf.Pow(baseMultiplier + distance * 0.01f, Mathf.Pow(distance, curveStrength));
+        int tileCost = Mathf.Min(Mathf.RoundToInt(scaledCost), 50000);
+
+
+
+        Debug.Log($"Tile ({x},{y}) is {distance} units from center. Cost: {tileCost}");
+
         // Spend coins
-        if (!EconomySystem.I.SpendCoins(expansionCost))
+        if (!EconomySystem.I.SpendCoins(tileCost))
             return false;
 
         AddTile(x, y);
@@ -118,9 +134,10 @@ public class TileManager : MonoBehaviour
         if (hoeFXPrefab != null)
             Instantiate(hoeFXPrefab, GridToWorld(x, y) + Vector3.up * 0.1f, Quaternion.identity);
 
-        Debug.Log($"Purchased tile at {x},{y}");
+        Debug.Log($"Purchased tile at {x},{y} for {tileCost} coins!");
         return true;
     }
+
 
     public List<Vector2Int> GetExpandableTiles()
     {
