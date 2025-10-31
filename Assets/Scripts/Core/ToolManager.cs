@@ -14,7 +14,6 @@ public class ToolManager : MonoBehaviour
     public Texture2D cursorWater;
     public Texture2D cursorSeed;
 
-
     [Header("Camera Grab Cursor")]
     public Texture2D cursorGrabClosed;
 
@@ -29,6 +28,10 @@ public class ToolManager : MonoBehaviour
 
     void Update()
     {
+        // Prevent tool switching while in expansion mode
+        if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
+            return;
+
         if (Input.GetKeyDown(KeyCode.Alpha1)) SetTool(Tool.Selection);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SetTool(Tool.Shovel);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SetTool(Tool.Water);
@@ -37,6 +40,9 @@ public class ToolManager : MonoBehaviour
 
     void LateUpdate()
     {
+        if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
+            return; // freeze cursor switching too
+
         // RMB or MMB held = Camera grab cursor
         if (Input.GetMouseButton(1) || Input.GetMouseButton(2))
         {
@@ -49,6 +55,9 @@ public class ToolManager : MonoBehaviour
 
     public void CycleTool(float direction)
     {
+        if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
+            return;
+
         int toolCount = System.Enum.GetValues(typeof(Tool)).Length;
         int index = (int)currentTool;
         index = (index + (direction > 0 ? -1 : 1) + toolCount) % toolCount;

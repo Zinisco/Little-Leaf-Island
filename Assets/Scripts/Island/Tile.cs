@@ -12,7 +12,8 @@ public class Tile : MonoBehaviour
     public double revertAfterRealDays = 1.0; // 1 real life day
 
     GameObject highlightInstance;
-    GameObject currentVisual;  
+    [HideInInspector] public GameObject currentVisual;
+
 
     [Header("Crop State")]
     public CropDefinition crop;    // what crop is planted here?
@@ -22,6 +23,7 @@ public class Tile : MonoBehaviour
     GameObject plantedObject = null;
     Transform cropAnchor;
     float randomYRotation;
+    int lastGrowthDayNumber;  // tracks which in-game day we last grew
 
 
     public void OnClicked()
@@ -127,6 +129,7 @@ public class Tile : MonoBehaviour
 
         crop = TileManager.I.carrotCrop;
         growthStage = 0;
+        lastGrowthDayNumber = TimeManager.I.DayNumber;
         lastWaterTime = TimeManager.I.currentDate;
 
         Debug.Log($"Planted {crop.displayName} at {x},{y}");
@@ -194,25 +197,27 @@ public class Tile : MonoBehaviour
 
     void CheckGrowth()
     {
-        DateTime now = TimeManager.I.currentDate;
+        int currentDay = TimeManager.I.DayNumber;
 
-        // Only grow if the soil is still wet today
+        // Only grow if soil is wet
         if (state != State.WetSoil)
         {
             Debug.Log($"Crop at {x},{y} did not grow today — soil is dry!");
             return;
         }
 
-        // Prevent multiple growths per day
-        if (lastWaterTime.Date < now.Date)
-        {
-            lastWaterTime = now;
-            growthStage = Mathf.Min(growthStage + 1, crop.StageCount - 1);
-            RefreshCropVisual();
+        // Prevent multiple growths on the same in-game day
+        if (lastGrowthDayNumber == currentDay)
+            return;
 
-            Debug.Log($"Crop at {x},{y} grew to stage {growthStage}");
-        }
+        // Grow one stage per in-game day
+        lastGrowthDayNumber = currentDay;
+        growthStage = Mathf.Min(growthStage + 1, crop.StageCount - 1);
+        RefreshCropVisual();
+
+        Debug.Log($"Crop at {x},{y} grew to stage {growthStage} on Day {currentDay}");
     }
+
 
 
     void TryHarvest()
@@ -290,7 +295,7 @@ public class Tile : MonoBehaviour
 
 
 
-    void UpdateVisual()
+    public void UpdateVisual()
     {
         if (currentVisual != null)
             Destroy(currentVisual);
@@ -384,7 +389,7 @@ public class Tile : MonoBehaviour
 
 
 
-    void UpdateCropAnchor()
+   public void UpdateCropAnchor()
     {
         cropAnchor = null;
         if (currentVisual != null)
@@ -401,6 +406,12 @@ public class Tile : MonoBehaviour
         }
     }
 
+    public void SetGrowthStage(int stage, float rotation)
+    {
+        growthStage = stage;
+        randomYRotation = rotation;
+        SpawnCropVisual();
+    }
 
 
     void PlayHoeFX()
@@ -458,6 +469,8 @@ public class Tile : MonoBehaviour
         }
     }
 
+    public int GetGrowthStage() => growthStage;
+    public float GetRandomRotation() => randomYRotation;
 
 
 }

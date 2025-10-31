@@ -1,5 +1,6 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class TileManager : MonoBehaviour
 {
@@ -12,6 +13,9 @@ public class TileManager : MonoBehaviour
     public GameObject wetSoilPrefab;
     public GameObject seededSoilDryPrefab;
     public GameObject seededSoilWetPrefab;
+
+    [Header("Expansion Settings")]
+    public int expansionCost = 50; // configurable cost per tile
 
     [Header("Crops")]
     public CropDefinition carrotCrop;
@@ -83,4 +87,107 @@ public class TileManager : MonoBehaviour
     {
         return tiles.ContainsKey((x, y));
     }
+
+    public bool TryBuyTile(int x, int y)
+    {
+        // Make sure it's adjacent to existing land
+        bool adjacentToOwned =
+            tiles.ContainsKey((x + 1, y)) || tiles.ContainsKey((x - 1, y)) ||
+            tiles.ContainsKey((x, y + 1)) || tiles.ContainsKey((x, y - 1));
+
+        if (!adjacentToOwned)
+        {
+            Debug.Log("You can only buy land adjacent to your farm!");
+            return false;
+        }
+
+        // Check if already owned
+        if (tiles.ContainsKey((x, y)))
+        {
+            Debug.Log("Tile already owned!");
+            return false;
+        }
+
+        // Spend coins
+        if (!EconomySystem.I.SpendCoins(expansionCost))
+            return false;
+
+        AddTile(x, y);
+
+        // Play a little FX for feedback
+        if (hoeFXPrefab != null)
+            Instantiate(hoeFXPrefab, GridToWorld(x, y) + Vector3.up * 0.1f, Quaternion.identity);
+
+        Debug.Log($"Purchased tile at {x},{y}");
+        return true;
+    }
+
+    public List<Vector2Int> GetExpandableTiles()
+    {
+        List<Vector2Int> result = new();
+
+        foreach (var key in tiles.Keys)
+        {
+            Vector2Int pos = new(key.Item1, key.Item2);
+            Vector2Int[] neighbors = {
+            new(pos.x + 1, pos.y),
+            new(pos.x - 1, pos.y),
+            new(pos.x, pos.y + 1),
+            new(pos.x, pos.y - 1)
+        };
+
+            foreach (var n in neighbors)
+            {
+                if (!tiles.ContainsKey((n.x, n.y)) && !result.Contains(n))
+                    result.Add(n);
+            }
+        }
+
+        return result;
+    }
+
+
+    public Dictionary<(int, int), Tile> GetAllTiles() => tiles;
+
+    public void AddOrRestoreTile(TileSaveData t)
+    {
+        // Create if missing
+        if (!tiles.ContainsKey((t.x, t.y)))
+            AddTile(t.x, t.y);
+
+        Tile tile = tiles[(t.x, t.y)];
+        tile.state = Enum.Parse<Tile.State>(t.state);
+
+        // If a crop exists
+        if (!string.IsNullOrEmpty(t.cropName))
+        {
+            tile.crop = carrotCrop; // for now only carrots
+
+            // Determine correct seeded prefab
+            if (tile.currentVisual != null)
+                UnityEngine.Object.Destroy(tile.currentVisual);
+
+            GameObject seededPrefab = (tile.state == Tile.State.WetSoil)
+                ? seededSoilWetPrefab
+                : seededSoilDryPrefab;
+
+            tile.InitializeVisual(UnityEngine.Object.Instantiate(
+                seededPrefab,
+                tile.transform.position,
+                UnityEngine.Quaternion.identity,
+                tile.transform
+            ));
+
+            // Ensure crop anchor and growth visuals restore properly
+            tile.UpdateCropAnchor();
+            tile.SetGrowthStage(t.growthStage, t.randomYRotation);
+        }
+        else
+        {
+            // No crop = normal soil/grass
+            tile.UpdateVisual();
+        }
+    }
+
+
 }
