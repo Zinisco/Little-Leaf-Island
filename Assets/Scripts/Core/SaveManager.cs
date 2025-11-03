@@ -17,6 +17,7 @@ public class SaveManager : MonoBehaviour
     {
         FarmSaveData data = new FarmSaveData();
         data.dayNumber = TimeManager.I.DayNumber;
+        data.worldSeed = TileManager.I.worldSeed;
 
         foreach (var tilePair in TileManager.I.GetAllTiles())
         {
@@ -49,6 +50,11 @@ public class SaveManager : MonoBehaviour
 
         string json = File.ReadAllText(savePath);
         FarmSaveData data = JsonUtility.FromJson<FarmSaveData>(json);
+
+        TileManager.I.worldSeed = data.worldSeed;
+
+        // Clear pending previews so they regenerate with the loaded seed
+        TileManager.I.ClearPending();
 
         // Restore only the in-game day number
         TimeManager.I.SetDay(data.dayNumber);

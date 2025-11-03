@@ -943,6 +943,156 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &659838645
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 659838646}
+  - component: {fileID: 659838648}
+  - component: {fileID: 659838647}
+  - component: {fileID: 659838649}
+  m_Layer: 5
+  m_Name: SeedDisplay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &659838646
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659838645}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1067251029}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 110.6, y: 25.064926}
+  m_SizeDelta: {x: 200, y: 50}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &659838647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659838645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: 'Seed: '
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 16
+  m_fontSizeBase: 16
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 1
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_TextWrappingMode: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_ActiveFontFeatures: 6e72656b
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_EmojiFallbackSupport: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &659838648
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659838645}
+  m_CullTransparentMesh: 1
+--- !u!114 &659838649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659838645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7d514ab9a63cc34e908a27cc623fa81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seedLabel: {fileID: 659838647}
 --- !u!1 &820006478
 GameObject:
   m_ObjectHideFlags: 0
@@ -1401,6 +1551,7 @@ RectTransform:
   - {fileID: 820006482}
   - {fileID: 349032183}
   - {fileID: 1735716285}
+  - {fileID: 659838646}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1869,6 +2020,8 @@ MonoBehaviour:
   cursorShovel: {fileID: 2800000, guid: 51ea2336cdfb2dd4680d7218e59981ea, type: 3}
   cursorWater: {fileID: 2800000, guid: ad326a3fcb92baf4e94c9d4ea720c880, type: 3}
   cursorSeed: {fileID: 2800000, guid: 98bb81e4565a9e94aae584d1e36c5c15, type: 3}
+  cursorAxe: {fileID: 2800000, guid: cf7e652c507e6804bb3ef795a4c5ebb3, type: 3}
+  cursorPickaxe: {fileID: 2800000, guid: 25372115c4ce8d243b80a01a49b7b915, type: 3}
   cursorGrabClosed: {fileID: 2800000, guid: 20259a65f355fe54d958dd0b4870f8c5, type: 3}
 --- !u!4 &1646828343
 Transform:
@@ -1902,7 +2055,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1735716285
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2050,13 +2203,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c492a21d7298794d9be14c83a933da0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  worldSeed: 0
   tileSize: 2
   grassPrefab: {fileID: 7109919125160964749, guid: ae7ad4e9bc69ed34b8de5d1a8d505cae, type: 3}
   soilPrefab: {fileID: 2686946290488405093, guid: 5569752f1b893624fa8dc47d8a96522a, type: 3}
   wetSoilPrefab: {fileID: 2686946290488405093, guid: 12148302940752e4b8fff81facbce978, type: 3}
   seededSoilDryPrefab: {fileID: 2368337326402377750, guid: 3102fad845bd75f4d93cbf111ebd9d54, type: 3}
   seededSoilWetPrefab: {fileID: 2368337326402377750, guid: 295a6691f4edaac46a3d98ca2d70e592, type: 3}
-  expansionCost: 20
+  expansionCost: 5
+  treePrefabs: []
+  rockPrefabs:
+  - {fileID: 6150137749246074394, guid: 446767675531f6049a7f32a586d3b6e6, type: 3}
+  - {fileID: 2985473368104612080, guid: 5be8117527afdc7469d5384fa50db9af, type: 3}
+  - {fileID: 1421909149779142305, guid: c7230ca5cbc987d49a0e3a9cda9c35ef, type: 3}
+  - {fileID: 2409431802784706062, guid: eb47215d5739a0f46a2699483842d778, type: 3}
+  - {fileID: 6399376316420978277, guid: 14e58a1e993368c4580bc11ab4347e0a, type: 3}
+  ghostMaterial: {fileID: 0}
+  spawnChance: 0.5
+  treeWeight: 0.5
+  treeHP: 3
+  rockHP: 3
   carrotCrop: {fileID: 11400000, guid: fb60e0507e6db25488f95dd84a5b4dc0, type: 2}
   islandRoot: {fileID: 135616883}
   hoeFXPrefab: {fileID: 3105645563005381861, guid: a060af4aebc49354bbc8638b6e6a79ea, type: 3}

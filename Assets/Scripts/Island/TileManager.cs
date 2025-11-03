@@ -6,6 +6,10 @@ public class TileManager : MonoBehaviour
 {
     public static TileManager I;
 
+    [Header("Seed Settings")]
+    public int worldSeed;
+
+
     [Header("Tile Settings")]
     public float tileSize = 2f;
     public GameObject grassPrefab;
@@ -15,7 +19,19 @@ public class TileManager : MonoBehaviour
     public GameObject seededSoilWetPrefab;
 
     [Header("Expansion Settings")]
-    public int expansionCost = 20; // configurable cost per tile
+    public int expansionCost = 5;
+
+    [Header("Resource Prefabs")]
+    public GameObject[] treePrefabs;
+    public GameObject[] rockPrefabs;
+    public Material ghostMaterial;
+
+
+    [Header("Resource Spawn Tuning")]
+    [Range(0f, 1f)] public float spawnChance = 0.25f;  // Balanced: 1 in 4 tiles get a resource
+    [Range(0f, 1f)] public float treeWeight = 0.66f;   // A,A,B feeling: ~2/3 trees, 1/3 rocks
+    public int treeHP = 3;
+    public int rockHP = 3;
 
     [Header("Crops")]
     public CropDefinition carrotCrop;
@@ -27,143 +43,239 @@ public class TileManager : MonoBehaviour
     public ParticleSystem hoeFXPrefab;
     public AudioClip hoeSound;
     public float hoeSoundVolume = 0.9f;
-
     public ParticleSystem waterFXPrefab;
     public AudioClip waterSound;
     public float waterSoundVolume = 0.9f;
 
-
     private Dictionary<(int, int), Tile> tiles = new();
+
+    // Pending resources keyed by grid position, only for NOT-YET-OWNED tiles
+    private Dictionary<Vector2Int, PendingResource> pending = new();
+
+    [Serializable]
+    public class PendingResource
+    {
+        public bool hasResource;
+        public ResourceNode.ResourceType type;
+        public int hp;
+    }
 
     void Awake()
     {
         I = this;
+
+        // If this is a NEW GAME, randomize a seed
+        // Later, when loading a save, you'll overwrite this with the saved value
+        worldSeed = UnityEngine.Random.Range(100000, 999999);
+
     }
+
 
     void Start()
     {
-        // Create a clean 3x3 starting island
         for (int x = -1; x <= 1; x++)
-        {
             for (int y = -1; y <= 1; y++)
-            {
                 AddTile(x, y);
-            }
-        }
     }
 
     public void AddTile(int x, int y)
     {
-        if (tiles.ContainsKey((x, y)))
-            return;
+        if (tiles.ContainsKey((x, y))) return;
 
         Vector3 pos = GridToWorld(x, y);
-
-        // Create tile logic parent
         GameObject tileGO = new GameObject($"Tile_{x}_{y}");
         tileGO.transform.position = pos;
         tileGO.transform.parent = islandRoot;
 
         Tile tile = tileGO.AddComponent<Tile>();
-        tile.x = x;
-        tile.y = y;
+        tile.x = x; tile.y = y;
         tile.state = Tile.State.Grass;
-
-        // Spawn visual as child
-        tile.InitializeVisual(
-            Instantiate(grassPrefab, pos, Quaternion.identity, tileGO.transform)
-        );
+        tile.InitializeVisual(Instantiate(grassPrefab, pos, Quaternion.identity, tileGO.transform));
 
         tiles.Add((x, y), tile);
     }
 
+    Vector3 GridToWorld(int x, int y) => new Vector3(x * tileSize, 0f, y * tileSize);
+    public bool HasTile(int x, int y) => tiles.ContainsKey((x, y));
+    public Dictionary<(int, int), Tile> GetAllTiles() => tiles;
 
-    Vector3 GridToWorld(int x, int y)
+    System.Random CoordRng(Vector2Int p)
     {
-        return new Vector3(x * tileSize, 0f, y * tileSize);
+        int seed = worldSeed;
+        unchecked
+        {
+            seed ^= p.x * 73856093;
+            seed ^= p.y * 19349663;
+        }
+        return new System.Random(seed);
     }
 
-    public bool HasTile(int x, int y)
+
+    PendingResource GetOrGeneratePending(Vector2Int p)
     {
-        return tiles.ContainsKey((x, y));
+        if (pending.TryGetValue(p, out var pr)) return pr;
+
+        var rng = CoordRng(p);
+        bool spawns = rng.NextDouble() < spawnChance;
+
+        var result = new PendingResource { hasResource = spawns, hp = 0 };
+
+        if (spawns)
+        {
+            bool isTree = rng.NextDouble() < treeWeight;
+            result.type = isTree ? ResourceNode.ResourceType.Tree : ResourceNode.ResourceType.Rock;
+            result.hp = isTree ? treeHP : rockHP;
+        }
+
+        pending[p] = result;
+        return result;
     }
+
+    public void SpawnGhostIfAny(Vector2Int p, Transform parent)
+    {
+        var pr = GetOrGeneratePending(p);
+        if (!pr.hasResource) return;
+
+        var rng = CoordRng(p);
+        GameObject prefab = null;
+
+        if (pr.type == ResourceNode.ResourceType.Tree && treePrefabs.Length > 0)
+        {
+            prefab = treePrefabs[rng.Next(treePrefabs.Length)];
+        }
+        else if (pr.type == ResourceNode.ResourceType.Rock && rockPrefabs.Length > 0)
+        {
+            prefab = rockPrefabs[rng.Next(rockPrefabs.Length)];
+        }
+
+        if (prefab == null) return;
+
+        var go = Instantiate(prefab, parent);
+        go.transform.localPosition = Vector3.zero;
+
+        // Raise the ghost so it sits above the highlight
+        var mainRenderer = go.GetComponentInChildren<Renderer>();
+        if (mainRenderer != null)
+        {
+            float height = mainRenderer.bounds.size.y;
+            go.transform.localPosition = new Vector3(0, height * 0.5f, 0);
+        }
+
+        // Convert this prefab into a ghost
+        foreach (var childRenderer in go.GetComponentsInChildren<Renderer>(true))
+            if (ghostMaterial != null) childRenderer.material = ghostMaterial;
+
+        foreach (var col in go.GetComponentsInChildren<Collider>(true))
+            col.enabled = false;
+
+        foreach (var rn in go.GetComponentsInChildren<ResourceNode>(true))
+            Destroy(rn);
+
+        foreach (var cr in go.GetComponentsInChildren<ClickableResource>(true))
+            Destroy(cr);
+
+        go.name = "[Ghost]" + go.name;
+    }
+
+
+
+    // After purchase, spawn the actual node on the owned tile and clear pending
+    void SpawnOwnedResourceIfAny(int x, int y)
+    {
+        var key = new Vector2Int(x, y);
+        if (!pending.TryGetValue(key, out var pr) || !pr.hasResource) return;
+
+        var rng = CoordRng(key);
+        GameObject prefab = null;
+
+        if (pr.type == ResourceNode.ResourceType.Tree && treePrefabs.Length > 0)
+            prefab = treePrefabs[rng.Next(treePrefabs.Length)];
+        else if (pr.type == ResourceNode.ResourceType.Rock && rockPrefabs.Length > 0)
+            prefab = rockPrefabs[rng.Next(rockPrefabs.Length)];
+
+        if (prefab == null) return;
+
+        var pos = GridToWorld(x, y);
+        var go = Instantiate(prefab, pos, Quaternion.identity, islandRoot);
+
+        // Raise the real resource
+        var mainRenderer = go.GetComponentInChildren<Renderer>();
+        if (mainRenderer != null)
+        {
+            float height = mainRenderer.bounds.size.y;
+            go.transform.position = pos + new Vector3(0, height * 0.5f, 0);
+        }
+
+        var rn = go.GetComponent<ResourceNode>();
+        if (rn == null) rn = go.AddComponent<ResourceNode>();
+        rn.type = pr.type;
+        rn.hitPoints = pr.hp;
+
+        if (go.GetComponent<ClickableResource>() == null)
+            go.AddComponent<ClickableResource>();
+
+        pending.Remove(key);
+    }
+
 
     public bool TryBuyTile(int x, int y)
     {
-        // Make sure it's adjacent to existing land
         bool adjacentToOwned =
             tiles.ContainsKey((x + 1, y)) || tiles.ContainsKey((x - 1, y)) ||
             tiles.ContainsKey((x, y + 1)) || tiles.ContainsKey((x, y - 1));
+        if (!adjacentToOwned) { Debug.Log("You can only buy adjacent land!"); return false; }
 
-        if (!adjacentToOwned)
-        {
-            Debug.Log("You can only buy land adjacent to your farm!");
-            return false;
-        }
+        if (tiles.ContainsKey((x, y))) { Debug.Log("Tile already owned!"); return false; }
 
-        // Check if already owned
-        if (tiles.ContainsKey((x, y)))
-        {
-            Debug.Log("Tile already owned!");
-            return false;
-        }
-
-        // --- Expansion cost based on total tiles owned ---
+        // Purchase-based cost curve
         int totalOwned = tiles.Count;
-
-        // Tunable base settings
-        float baseCost = expansionCost;     // base = 20
-        float growthRate = 1.05f;           // gentle exponential scaling per tile
-        float curveStrength = 0.85f;        // how sharply it accelerates
-        float earlyDiscount = 0.85f;        // keeps early expansion affordable
-
-        // Compute cost: grows gently for early game, ramps up mid-to-late game
+        float baseCost = expansionCost;   // start at 5
+        float growthRate = 1.035f;
+        float curveStrength = 0.9f;
+        float earlyDiscount = 0.9f;
         float scaledCost = baseCost * earlyDiscount * Mathf.Pow(growthRate, Mathf.Pow(totalOwned, curveStrength));
-
-        // Clamp to 50,000 max
         int tileCost = Mathf.Min(Mathf.RoundToInt(scaledCost), 50000);
 
-        // Spend coins
-        if (!EconomySystem.I.SpendCoins(tileCost))
-            return false;
+        if (!EconomySystem.I.SpendCoins(tileCost)) return false;
 
         AddTile(x, y);
 
-        // Play a little FX for feedback
         if (hoeFXPrefab != null)
             Instantiate(hoeFXPrefab, GridToWorld(x, y) + Vector3.up * 0.1f, Quaternion.identity);
 
-        Debug.Log($"Purchased tile at {x},{y} for {tileCost} coins!");
+        // Now place any pending resource as a real node
+        SpawnOwnedResourceIfAny(x, y);
+
+        Debug.Log($"Purchased tile {x},{y} for {tileCost} coins.");
         return true;
     }
 
-
     public List<Vector2Int> GetExpandableTiles()
     {
-        List<Vector2Int> result = new();
-
+        var result = new List<Vector2Int>();
         foreach (var key in tiles.Keys)
         {
-            Vector2Int pos = new(key.Item1, key.Item2);
-            Vector2Int[] neighbors = {
-            new(pos.x + 1, pos.y),
-            new(pos.x - 1, pos.y),
-            new(pos.x, pos.y + 1),
-            new(pos.x, pos.y - 1)
-        };
-
+            var pos = new Vector2Int(key.Item1, key.Item2);
+            var neighbors = new[]
+            {
+                new Vector2Int(pos.x + 1, pos.y),
+                new Vector2Int(pos.x - 1, pos.y),
+                new Vector2Int(pos.x, pos.y + 1),
+                new Vector2Int(pos.x, pos.y - 1),
+            };
             foreach (var n in neighbors)
             {
                 if (!tiles.ContainsKey((n.x, n.y)) && !result.Contains(n))
                     result.Add(n);
             }
         }
-
         return result;
     }
 
-
-    public Dictionary<(int, int), Tile> GetAllTiles() => tiles;
+    public void ClearPending()
+    {
+        pending.Clear();
+    }
 
     public void AddOrRestoreTile(TileSaveData t)
     {

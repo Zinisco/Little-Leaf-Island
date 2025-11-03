@@ -17,4 +17,5 @@ public class FarmSaveData
 {
     public List<TileSaveData> tiles = new();
     public int dayNumber;
+    public int worldSeed;
 }

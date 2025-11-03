@@ -4,7 +4,8 @@ public class ToolManager : MonoBehaviour
 {
     public static ToolManager I;
 
-    public enum Tool { Selection, Shovel, Water, Seed }
+    public enum Tool { Selection, Shovel, Water, Seed, Axe, Pickaxe }
+
     public Tool currentTool = Tool.Selection;
 
     [Header("Cursor Icons")]
@@ -13,6 +14,8 @@ public class ToolManager : MonoBehaviour
     public Texture2D cursorShovel;
     public Texture2D cursorWater;
     public Texture2D cursorSeed;
+    public Texture2D cursorAxe;
+    public Texture2D cursorPickaxe;
 
     [Header("Camera Grab Cursor")]
     public Texture2D cursorGrabClosed;
@@ -36,6 +39,8 @@ public class ToolManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha2)) SetTool(Tool.Shovel);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SetTool(Tool.Water);
         if (Input.GetKeyDown(KeyCode.Alpha4)) SetTool(Tool.Seed);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) SetTool(Tool.Axe);
+        if (Input.GetKeyDown(KeyCode.Alpha6)) SetTool(Tool.Pickaxe);
     }
 
     void LateUpdate()
@@ -71,7 +76,7 @@ public class ToolManager : MonoBehaviour
         ApplyCursor();
     }
 
-    void ApplyCursor()
+    public void ApplyCursor()
     {
         Texture2D tex = cursorDefault;
 
@@ -81,6 +86,8 @@ public class ToolManager : MonoBehaviour
             case Tool.Shovel: tex = cursorShovel; break;
             case Tool.Water: tex = cursorWater; break;
             case Tool.Seed: tex = cursorSeed; break;
+            case Tool.Axe: tex = cursorAxe; break;
+            case Tool.Pickaxe: tex = cursorPickaxe; break;
         }
 
         Cursor.SetCursor(tex, cursorHotspot, CursorMode.Auto);

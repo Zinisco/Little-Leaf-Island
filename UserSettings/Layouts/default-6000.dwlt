@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PixelRect:
     serializedVersion: 2
-    x: 0
+    x: 1920
     y: 43
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Project
+  m_Title: Inspector
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 110
+  controlID: 108
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -1277,9 +1277,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 687.225, y: 38.5, z: 0}
+    m_Target: {x: -0.0013177395, y: -0.012473285, z: 0.10638136}
     speed: 2
-    m_Value: {x: 687.225, y: 38.5, z: 0}
+    m_Value: {x: -0.0013177395, y: -0.012473285, z: 0.10638136}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1325,13 +1325,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.11084931, y: -0.8720495, z: 0.23176613, w: 0.41670987}
+    m_Target: {x: -0.13606517, y: -0.25606105, z: 0.036392022, w: -0.9564179}
     speed: 2
-    m_Value: {x: -0.11084264, y: 0.871997, z: -0.23175219, w: -0.41668478}
+    m_Value: {x: -0.13606517, y: -0.25606102, z: 0.036392022, w: -0.95641786}
   m_Size:
-    m_Target: 57.19591
+    m_Target: 1.6831498
     speed: 2
-    m_Value: 57.19591
+    m_Value: 1.6831498
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1386,9 +1386,9 @@ MonoBehaviour:
     m_TextWithWhitespace: "Console\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 0
+    x: 1920
     y: 79
-    width: 1037
+    width: 1038
     height: 427
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1480,7 +1480,7 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: 20fbffff
+      m_ExpandedIDs: 20fbffffa8a80000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1552,7 +1552,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/ScriptableObjects/CropSO
+    - Assets/Prefabs/Resources
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1570,7 +1570,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 86590000
     m_LastClickedID: 22918
-    m_ExpandedIDs: 000000004eab000050ab000052ab000054ab000056ab000058ab00005aab00005cab00005eab000060ab000062ab000064ab000066ab000068ab00006aab00006cab0000
+    m_ExpandedIDs: 0000000054ad000056ad000058ad00005aad00005cad00005ead000060ad000062ad000064ad000066ad000068ad00006aad00006cad00006ead000070ad000072ad000074ad000076ad000078ad0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1596,10 +1596,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 0}
+    scrollPos: {x: 0, y: 240}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000004eab000050ab000052ab000054ab000056ab000058ab00005aab00005cab00005eab000060ab000062ab000064ab000066ab000068ab00006aab00006cab0000
+    m_ExpandedIDs: 0000000054ad000056ad000058ad00005aad00005cad00005ead000060ad000062ad000064ad000066ad000068ad00006aad00006cad00006ead000070ad000072ad000074ad000076ad000078ad0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

@@ -58,6 +58,9 @@ public class ExpansionModeManager : MonoBehaviour
             if (expansionBannerUI != null)
                 expansionBannerUI.SetActive(true);
 
+            // Force default cursor for expansion mode
+            Cursor.SetCursor(ToolManager.I.cursorDefault, Vector2.zero, CursorMode.Auto);
+
             Debug.Log("Entered expansion mode!");
         }
         else
@@ -67,9 +70,13 @@ public class ExpansionModeManager : MonoBehaviour
             if (expansionBannerUI != null)
                 expansionBannerUI.SetActive(false);
 
+            // Restore tool cursor when leaving expansion mode
+            ToolManager.I.ApplyCursor();
+
             Debug.Log("Exited expansion mode!");
         }
     }
+
 
     void ShowAllHighlights()
     {
@@ -88,6 +95,9 @@ public class ExpansionModeManager : MonoBehaviour
 
             // Spawn highlight for expansion tiles only
             GameObject highlight = Instantiate(expansionHighlightPrefab, pos, Quaternion.identity, TileManager.I.islandRoot);
+
+            // Spawn ghost resource preview on top of this tile
+            TileManager.I.SpawnGhostIfAny(spot, highlight.transform);
 
             // Hide cost UI until hover
             var costCanvas = highlight.transform.Find("CostCanvas");
@@ -128,16 +138,17 @@ public class ExpansionModeManager : MonoBehaviour
                     var costCanvas = expansionTile.transform.Find("CostCanvas");
                     if (costCanvas != null)
                     {
-                        // --- Match TileManager’s cost curve ---
+                        // --- Match TileManager’s purchase-based cost formula ---
                         int totalOwned = TileManager.I.GetAllTiles().Count;
 
-                        float baseCost = TileManager.I.expansionCost;  // base = 25
-                        float growthRate = 1.05f;
-                        float curveStrength = 0.85f;
-                        float earlyDiscount = 0.85f;
+                        float baseCost = TileManager.I.expansionCost;  // base = 5
+                        float growthRate = 1.035f;
+                        float curveStrength = 0.9f;
+                        float earlyDiscount = 0.9f;
 
                         float scaledCost = baseCost * earlyDiscount * Mathf.Pow(growthRate, Mathf.Pow(totalOwned, curveStrength));
                         int tileCost = Mathf.Min(Mathf.RoundToInt(scaledCost), 50000);
+
 
                         // --- Update UI text ---
                         var costLabel = costCanvas.transform.Find("CostLabel");
