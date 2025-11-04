@@ -58,6 +58,7 @@ public class TileManager : MonoBehaviour
         public bool hasResource;
         public ResourceNode.ResourceType type;
         public int hp;
+        public int prefabIndex; 
     }
 
     void Awake()
@@ -118,13 +119,18 @@ public class TileManager : MonoBehaviour
         var rng = CoordRng(p);
         bool spawns = rng.NextDouble() < spawnChance;
 
-        var result = new PendingResource { hasResource = spawns, hp = 0 };
+        var result = new PendingResource { hasResource = spawns, hp = 0, prefabIndex = -1 };
 
         if (spawns)
         {
             bool isTree = rng.NextDouble() < treeWeight;
             result.type = isTree ? ResourceNode.ResourceType.Tree : ResourceNode.ResourceType.Rock;
             result.hp = isTree ? treeHP : rockHP;
+
+            // Choose prefab index once and store it
+            var arr = isTree ? treePrefabs : rockPrefabs;
+            if (arr != null && arr.Length > 0)
+                result.prefabIndex = rng.Next(arr.Length);
         }
 
         pending[p] = result;
@@ -136,21 +142,16 @@ public class TileManager : MonoBehaviour
         var pr = GetOrGeneratePending(p);
         if (!pr.hasResource) return;
 
-        var rng = CoordRng(p);
-        GameObject prefab = null;
+        GameObject[] arr = pr.type == ResourceNode.ResourceType.Tree ? treePrefabs : rockPrefabs;
+        if (arr == null || arr.Length == 0) return;
 
-        if (pr.type == ResourceNode.ResourceType.Tree && treePrefabs.Length > 0)
-        {
-            prefab = treePrefabs[rng.Next(treePrefabs.Length)];
-        }
-        else if (pr.type == ResourceNode.ResourceType.Rock && rockPrefabs.Length > 0)
-        {
-            prefab = rockPrefabs[rng.Next(rockPrefabs.Length)];
-        }
-
+        // Use stored index
+        int index = Mathf.Clamp(pr.prefabIndex, 0, arr.Length - 1);
+        var prefab = arr[index];
         if (prefab == null) return;
 
         var go = Instantiate(prefab, parent);
+
         go.transform.localPosition = Vector3.zero;
 
         // Raise the ghost so it sits above the highlight
@@ -178,27 +179,23 @@ public class TileManager : MonoBehaviour
     }
 
 
-
     // After purchase, spawn the actual node on the owned tile and clear pending
     void SpawnOwnedResourceIfAny(int x, int y)
     {
         var key = new Vector2Int(x, y);
         if (!pending.TryGetValue(key, out var pr) || !pr.hasResource) return;
 
-        var rng = CoordRng(key);
-        GameObject prefab = null;
+        GameObject[] arr = pr.type == ResourceNode.ResourceType.Tree ? treePrefabs : rockPrefabs;
+        if (arr == null || arr.Length == 0) return;
 
-        if (pr.type == ResourceNode.ResourceType.Tree && treePrefabs.Length > 0)
-            prefab = treePrefabs[rng.Next(treePrefabs.Length)];
-        else if (pr.type == ResourceNode.ResourceType.Rock && rockPrefabs.Length > 0)
-            prefab = rockPrefabs[rng.Next(rockPrefabs.Length)];
-
+        int index = Mathf.Clamp(pr.prefabIndex, 0, arr.Length - 1);
+        var prefab = arr[index];
         if (prefab == null) return;
 
         var pos = GridToWorld(x, y);
         var go = Instantiate(prefab, pos, Quaternion.identity, islandRoot);
 
-        // Raise the real resource
+        // Raise the real resource above the tile
         var mainRenderer = go.GetComponentInChildren<Renderer>();
         if (mainRenderer != null)
         {
@@ -206,6 +203,7 @@ public class TileManager : MonoBehaviour
             go.transform.position = pos + new Vector3(0, height * 0.5f, 0);
         }
 
+        // Attach essential components
         var rn = go.GetComponent<ResourceNode>();
         if (rn == null) rn = go.AddComponent<ResourceNode>();
         rn.type = pr.type;
@@ -216,6 +214,92 @@ public class TileManager : MonoBehaviour
 
         pending.Remove(key);
     }
+
+
+    // ------------------------------------------------------------
+    // Weighted random model picker with scaled adjacency penalty
+    // ------------------------------------------------------------
+    GameObject PickSoftAvoidPrefab(GameObject[] options, Vector2Int center, ResourceNode.ResourceType type, System.Random rng)
+    {
+        // Step 1: Base weight for each model
+        float[] weights = new float[options.Length];
+        for (int i = 0; i < options.Length; i++)
+            weights[i] = 1f; // all start equally weighted
+
+        // Step 2: Check cardinal neighbors (N,S,E,W)
+        Vector2Int[] dirs = new Vector2Int[]
+        {
+        new Vector2Int(1,0),
+        new Vector2Int(-1,0),
+        new Vector2Int(0,1),
+        new Vector2Int(0,-1)
+        };
+
+        // Track neighbor prefab indices
+        List<int> neighborIndices = new List<int>();
+
+        foreach (var dir in dirs)
+        {
+            Vector2Int neighborKey = center + dir;
+            if (pending.TryGetValue(neighborKey, out var neighbor))
+            {
+                // Only care about same resource type
+                if (neighbor.hasResource && neighbor.type == type && neighbor.hp > 0)
+                {
+                    // Derive which prefab index was chosen for that neighbor
+                    // by re-seeding RNG the same way (for deterministic generation)
+                    var nrng = CoordRng(neighborKey);
+                    int index = nrng.Next(options.Length);
+                    neighborIndices.Add(index);
+                }
+            }
+        }
+
+        // Step 3: Apply scaled penalties
+        // First duplicate = -0.4, second = -0.25 total
+        foreach (int matchIndex in neighborIndices)
+        {
+            int count = neighborIndices.FindAll(i => i == matchIndex).Count;
+            if (count >= 1)
+                weights[matchIndex] -= 0.4f;
+            if (count >= 2)
+                weights[matchIndex] -= 0.25f;
+        }
+
+        // Step 4: Clamp minimum weights to small positive value
+        for (int i = 0; i < weights.Length; i++)
+            if (weights[i] < 0.01f)
+                weights[i] = 0.01f;
+
+        // Step 5: Normalize so all weights sum to 1
+        float total = 0f;
+        foreach (float w in weights) total += w;
+        if (total > 0f)
+        {
+            for (int i = 0; i < weights.Length; i++)
+                weights[i] /= total;
+        }
+        else
+        {
+            // Fallback: all weights zero or negative ? pure random
+            int fallbackIndex = rng.Next(options.Length);
+            return options[fallbackIndex];
+        }
+
+        // Step 6: Weighted random selection
+        double roll = rng.NextDouble();
+        double cumulative = 0.0;
+        for (int i = 0; i < options.Length; i++)
+        {
+            cumulative += weights[i];
+            if (roll <= cumulative)
+                return options[i];
+        }
+
+        // Safety fallback
+        return options[rng.Next(options.Length)];
+    }
+
 
 
     public bool TryBuyTile(int x, int y)
@@ -317,5 +401,46 @@ public class TileManager : MonoBehaviour
         }
     }
 
+    public List<PendingSaveData> ExportPending()
+    {
+        var list = new List<PendingSaveData>();
+        foreach (var kvp in pending)
+        {
+            var p = kvp.Key;
+            var v = kvp.Value;
+            list.Add(new PendingSaveData
+            {
+                x = p.x,
+                y = p.y,
+                hasResource = v.hasResource,
+                type = v.type.ToString(),
+                hp = v.hp,
+                prefabIndex = v.prefabIndex
+            });
+        }
+        return list;
+    }
+
+    public void ImportPending(List<PendingSaveData> entries)
+    {
+        pending.Clear();
+        if (entries == null) return;
+
+        foreach (var e in entries)
+        {
+            var key = new Vector2Int(e.x, e.y);
+            var pr = new PendingResource
+            {
+                hasResource = e.hasResource,
+                hp = e.hp,
+                prefabIndex = e.prefabIndex
+            };
+
+            if (Enum.TryParse(e.type, out ResourceNode.ResourceType t))
+                pr.type = t;
+
+            pending[key] = pr;
+        }
+    }
 
 }

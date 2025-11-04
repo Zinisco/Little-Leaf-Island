@@ -2211,7 +2211,9 @@ MonoBehaviour:
   seededSoilDryPrefab: {fileID: 2368337326402377750, guid: 3102fad845bd75f4d93cbf111ebd9d54, type: 3}
   seededSoilWetPrefab: {fileID: 2368337326402377750, guid: 295a6691f4edaac46a3d98ca2d70e592, type: 3}
   expansionCost: 5
-  treePrefabs: []
+  treePrefabs:
+  - {fileID: 5125989971435432634, guid: c92cdf2846cb5f24ebb5817e15dedb28, type: 3}
+  - {fileID: 3238552425712011658, guid: 3031440dc8a1be8468dfaf51d3b6df52, type: 3}
   rockPrefabs:
   - {fileID: 6150137749246074394, guid: 446767675531f6049a7f32a586d3b6e6, type: 3}
   - {fileID: 2985473368104612080, guid: 5be8117527afdc7469d5384fa50db9af, type: 3}
@@ -2219,7 +2221,7 @@ MonoBehaviour:
   - {fileID: 2409431802784706062, guid: eb47215d5739a0f46a2699483842d778, type: 3}
   - {fileID: 6399376316420978277, guid: 14e58a1e993368c4580bc11ab4347e0a, type: 3}
   ghostMaterial: {fileID: 0}
-  spawnChance: 0.5
+  spawnChance: 0.4
   treeWeight: 0.5
   treeHP: 3
   rockHP: 3

@@ -34,6 +34,11 @@ public class SaveManager : MonoBehaviour
             data.tiles.Add(t);
         }
 
+        data.pending = new List<PendingSaveData>();
+        foreach (var kvp in TileManager.I.ExportPending())
+            data.pending.Add(kvp);
+
+
         string json = JsonUtility.ToJson(data, true);
         File.WriteAllText(savePath, json);
 
@@ -53,8 +58,15 @@ public class SaveManager : MonoBehaviour
 
         TileManager.I.worldSeed = data.worldSeed;
 
-        // Clear pending previews so they regenerate with the loaded seed
-        TileManager.I.ClearPending();
+        if (data.pending != null && data.pending.Count > 0)
+        {
+            TileManager.I.ImportPending(data.pending);
+        }
+        else
+        {
+            // No pending saved. Likely an old save. Keep pending empty.
+        }
+
 
         // Restore only the in-game day number
         TimeManager.I.SetDay(data.dayNumber);
