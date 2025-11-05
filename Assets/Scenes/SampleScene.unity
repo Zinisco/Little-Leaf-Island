@@ -2210,6 +2210,12 @@ MonoBehaviour:
   wetSoilPrefab: {fileID: 2686946290488405093, guid: 12148302940752e4b8fff81facbce978, type: 3}
   seededSoilDryPrefab: {fileID: 2368337326402377750, guid: 3102fad845bd75f4d93cbf111ebd9d54, type: 3}
   seededSoilWetPrefab: {fileID: 2368337326402377750, guid: 295a6691f4edaac46a3d98ca2d70e592, type: 3}
+  decorGrassPrefab: {fileID: 7109919125160964749, guid: 5e5196f0636ed974fa7ef725fa4f6e48, type: 3}
+  housePrefab: {fileID: 5902320330691881524, guid: a1ebb8be535e0a74fadc8da1f8ccba1b, type: 3}
+  houseOrigin: {x: 2, y: -1}
+  houseSize: {x: 3, y: 3}
+  houseOffset: {x: -1, y: 1.1, z: -1}
+  houseRotationY: -90
   expansionCost: 5
   treePrefabs:
   - {fileID: 5125989971435432634, guid: c92cdf2846cb5f24ebb5817e15dedb28, type: 3}

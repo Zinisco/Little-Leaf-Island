@@ -17,6 +17,16 @@ public class TileManager : MonoBehaviour
     public GameObject wetSoilPrefab;
     public GameObject seededSoilDryPrefab;
     public GameObject seededSoilWetPrefab;
+    public GameObject decorGrassPrefab;
+
+
+    [Header("HouseFeatures")]
+    public GameObject housePrefab;
+    public Vector2Int houseOrigin = new Vector2Int(2, -1); // bottom-left tile of house
+    public Vector2Int houseSize = new Vector2Int(3, 3); // width = 3, height = 2
+    public Vector3 houseOffset = new Vector3(-1, 1.2f, -1);
+    public float houseRotationY = 90f;
+
 
     [Header("Expansion Settings")]
     public int expansionCost = 5;
@@ -77,6 +87,8 @@ public class TileManager : MonoBehaviour
         for (int x = -1; x <= 1; x++)
             for (int y = -1; y <= 1; y++)
                 AddTile(x, y);
+
+        SpawnHouse();
     }
 
     public void AddTile(int x, int y)
@@ -95,6 +107,44 @@ public class TileManager : MonoBehaviour
 
         tiles.Add((x, y), tile);
     }
+
+    void SpawnHouse()
+    {
+        // Create and mark the tiles under the house
+        for (int x = 0; x < houseSize.x; x++)
+        {
+            for (int y = 0; y < houseSize.y; y++)
+            {
+                int gx = houseOrigin.x + x;
+                int gy = houseOrigin.y + y;
+
+                if (!tiles.ContainsKey((gx, gy)))
+                    AddTile(gx, gy);
+
+                tiles[(gx, gy)].state = Tile.State.Decor;
+                tiles[(gx, gy)].UpdateVisual();
+            }
+        }
+
+        // Position is the center of the footprint
+        Vector3 basePos = GridToWorld(houseOrigin.x, houseOrigin.y);
+        Vector3 centerOffset = new Vector3(
+            (houseSize.x * tileSize) / 2f,
+            0,
+            (houseSize.y * tileSize) / 2f
+        );
+
+        Quaternion rot = Quaternion.Euler(0, houseRotationY, 0);
+
+        Instantiate(
+            housePrefab,
+            basePos + centerOffset + houseOffset,
+            rot,
+            islandRoot
+        );
+    }
+
+
 
     Vector3 GridToWorld(int x, int y) => new Vector3(x * tileSize, 0f, y * tileSize);
     public bool HasTile(int x, int y) => tiles.ContainsKey((x, y));

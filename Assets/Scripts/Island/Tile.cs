@@ -4,7 +4,7 @@ using UnityEngine;
 public class Tile : MonoBehaviour
 {
     public int x, y;
-    public enum State { Grass, Soil, WetSoil }
+    public enum State { Grass, Soil, WetSoil, Decor }
 
     public State state = State.Grass;
 
@@ -300,9 +300,12 @@ public class Tile : MonoBehaviour
         if (currentVisual != null)
             Destroy(currentVisual);
 
-        GameObject prefab = (state == State.WetSoil ? TileManager.I.wetSoilPrefab :
-                             state == State.Soil ? TileManager.I.soilPrefab :
-                             TileManager.I.grassPrefab);
+        GameObject prefab =
+    state == State.Decor ? TileManager.I.decorGrassPrefab :
+    state == State.WetSoil ? TileManager.I.wetSoilPrefab :
+    state == State.Soil ? TileManager.I.soilPrefab :
+    TileManager.I.grassPrefab;
+
 
         currentVisual = Instantiate(prefab, transform.position, Quaternion.identity, transform);
 
