@@ -39,6 +39,9 @@ public class ExpansionModeManager : MonoBehaviour
 
     void Update()
     {
+        if (InventoryUIController.IsOpen)
+            return; // Ignore all expansion input when inventory is open
+
         if (Input.GetKeyDown(toggleKey))
             ToggleExpansionMode();
 
@@ -240,4 +243,18 @@ public class ExpansionModeManager : MonoBehaviour
         }
         highlights.Clear();
     }
+
+    public void ForceExitExpansion()
+    {
+        if (!isActive) return;
+        isActive = false;
+        ClearHighlights();
+        ClearHoverHighlight();
+        if (expansionBannerUI != null)
+            expansionBannerUI.SetActive(false);
+
+        ToolManager.I.ApplyCursor();
+        Debug.Log("Forced exit from expansion mode due to inventory opening.");
+    }
+
 }

@@ -109,11 +109,11 @@ public class ResourceNode : MonoBehaviour
 
         if (type == ResourceType.Tree)
         {
-            InventorySystem.AddWood(1 + Random.Range(1, 3)); // 1–3 wood
+            InventorySystem.Add(InventorySystem.ResourceType.Wood, 1 + Random.Range(5, 10));
         }
         else if (type == ResourceType.Rock)
         {
-            InventorySystem.AddStone(1 + Random.Range(1, 2)); // 1–2 stone
+            InventorySystem.Add(InventorySystem.ResourceType.Stone, 1 + Random.Range(2, 5));
         }
 
         Destroy(gameObject);

@@ -35,6 +35,10 @@ public class ToolManager : MonoBehaviour
         if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
             return;
 
+        // Stop tool switching when inventory is open
+        if (InventoryUIController.IsOpen)
+            return;
+
         if (Input.GetKeyDown(KeyCode.Alpha1)) SetTool(Tool.Selection);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SetTool(Tool.Shovel);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SetTool(Tool.Water);
@@ -45,8 +49,13 @@ public class ToolManager : MonoBehaviour
 
     void LateUpdate()
     {
+        // If inventory is open, do NOT change the cursor at all
+        if (InventoryUIController.IsOpen)
+            return;
+
+        // Prevent cursor switching in expansion mode
         if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
-            return; // freeze cursor switching too
+            return;
 
         // RMB or MMB held = Camera grab cursor
         if (Input.GetMouseButton(1) || Input.GetMouseButton(2))
@@ -57,6 +66,7 @@ public class ToolManager : MonoBehaviour
 
         ApplyCursor();
     }
+
 
     public void CycleTool(float direction)
     {
@@ -73,8 +83,11 @@ public class ToolManager : MonoBehaviour
     void SetTool(Tool newTool)
     {
         currentTool = newTool;
-        ApplyCursor();
+
+        if (!InventoryUIController.IsOpen)
+            ApplyCursor();
     }
+
 
     public void ApplyCursor()
     {
@@ -92,4 +105,10 @@ public class ToolManager : MonoBehaviour
 
         Cursor.SetCursor(tex, cursorHotspot, CursorMode.Auto);
     }
+
+    public void ForceDefaultCursor()
+    {
+        Cursor.SetCursor(cursorDefault, cursorHotspot, CursorMode.Auto);
+    }
+
 }

@@ -20,7 +20,19 @@ public class FarmSaveData
     public int worldSeed;
 
     public List<PendingSaveData> pending = new();
+
+    //full slot inventory save
+    public List<InventorySlotSaveData> inventorySlots = new();
 }
+
+
+[Serializable]
+public class InventorySlotSaveData
+{
+    public string itemID;
+    public int quantity;
+}
+
 
 [Serializable]
 public class PendingSaveData

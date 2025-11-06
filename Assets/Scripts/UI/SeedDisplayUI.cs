@@ -8,18 +8,19 @@ public class SeedDisplayUI : MonoBehaviour
     void Start()
     {
         if (seedLabel == null)
-        {
             seedLabel = GetComponent<TextMeshProUGUI>();
-        }
 
+        UpdateSeedDisplay();
+    }
+
+    public void UpdateSeedDisplay()
+    {
         seedLabel.text = $"Seed: {TileManager.I.worldSeed}";
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.F3))
-        {
-            gameObject.SetActive(!gameObject.activeSelf);
-        }
+            seedLabel.gameObject.SetActive(!seedLabel.gameObject.activeSelf);
     }
 }

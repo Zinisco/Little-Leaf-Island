@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 public class TileManager : MonoBehaviour
 {
@@ -195,24 +196,37 @@ public class TileManager : MonoBehaviour
         GameObject[] arr = pr.type == ResourceNode.ResourceType.Tree ? treePrefabs : rockPrefabs;
         if (arr == null || arr.Length == 0) return;
 
-        // Use stored index
         int index = Mathf.Clamp(pr.prefabIndex, 0, arr.Length - 1);
         var prefab = arr[index];
         if (prefab == null) return;
 
         var go = Instantiate(prefab, parent);
-
         go.transform.localPosition = Vector3.zero;
 
-        // Raise the ghost so it sits above the highlight
-        var mainRenderer = go.GetComponentInChildren<Renderer>();
-        if (mainRenderer != null)
+        // Compute correct world pos for height offset
+        var pos = GridToWorld(p.x, p.y);
+
+        var renderers = go.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
         {
-            float height = mainRenderer.bounds.size.y;
-            go.transform.localPosition = new Vector3(0, height * 0.5f, 0);
+            float minY = float.MaxValue;
+            float maxY = float.MinValue;
+
+            foreach (var r in renderers)
+            {
+                minY = Mathf.Min(minY, r.bounds.min.y);
+                maxY = Mathf.Max(maxY, r.bounds.max.y);
+            }
+
+            float height = maxY - minY;
+
+            // Correct ghost placement
+            float sinkPercent = (pr.type == ResourceNode.ResourceType.Rock) ? 0.50f : 0f;
+            go.transform.position = pos + new Vector3(0, (height * 0.5f - minY) - (height * sinkPercent), 0);
+
         }
 
-        // Convert this prefab into a ghost
+        // Convert prefab to ghost
         foreach (var childRenderer in go.GetComponentsInChildren<Renderer>(true))
             if (ghostMaterial != null) childRenderer.material = ghostMaterial;
 
@@ -227,6 +241,7 @@ public class TileManager : MonoBehaviour
 
         go.name = "[Ghost]" + go.name;
     }
+
 
 
     // After purchase, spawn the actual node on the owned tile and clear pending
@@ -246,12 +261,28 @@ public class TileManager : MonoBehaviour
         var go = Instantiate(prefab, pos, Quaternion.identity, islandRoot);
 
         // Raise the real resource above the tile
-        var mainRenderer = go.GetComponentInChildren<Renderer>();
-        if (mainRenderer != null)
+        var renderers = go.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
         {
-            float height = mainRenderer.bounds.size.y;
-            go.transform.position = pos + new Vector3(0, height * 0.5f, 0);
+            // Calculate lowest and highest Y of all renderers
+            float minY = float.MaxValue;
+            float maxY = float.MinValue;
+
+            foreach (var r in renderers)
+            {
+                minY = Mathf.Min(minY, r.bounds.min.y);
+                maxY = Mathf.Max(maxY, r.bounds.max.y);
+            }
+
+            float height = maxY - minY;
+
+            // Sinking amount: rocks embed slightly into ground, trees stay above
+            float sinkPercent = (pr.type == ResourceNode.ResourceType.Rock) ? 0.50f : 0f;
+            go.transform.position = pos + new Vector3(0, (height * 0.5f - minY) - (height * sinkPercent), 0);
+
         }
+
+
 
         // Attach essential components
         var rn = go.GetComponent<ResourceNode>();

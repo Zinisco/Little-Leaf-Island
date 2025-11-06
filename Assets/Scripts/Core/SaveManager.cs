@@ -19,6 +19,9 @@ public class SaveManager : MonoBehaviour
         data.dayNumber = TimeManager.I.DayNumber;
         data.worldSeed = TileManager.I.worldSeed;
 
+        // Save Inventory Slots
+        data.inventorySlots = InventorySystem.I.ExportSlots();
+
         foreach (var tilePair in TileManager.I.GetAllTiles())
         {
             Tile tile = tilePair.Value;
@@ -37,7 +40,6 @@ public class SaveManager : MonoBehaviour
         data.pending = new List<PendingSaveData>();
         foreach (var kvp in TileManager.I.ExportPending())
             data.pending.Add(kvp);
-
 
         string json = JsonUtility.ToJson(data, true);
         File.WriteAllText(savePath, json);
@@ -62,13 +64,18 @@ public class SaveManager : MonoBehaviour
         {
             TileManager.I.ImportPending(data.pending);
         }
-        else
+
+        // Load Inventory Slots
+        if (data.inventorySlots != null && data.inventorySlots.Count > 0)
         {
-            // No pending saved. Likely an old save. Keep pending empty.
+            InventorySystem.I.ImportSlots(
+                data.inventorySlots,
+                id => ItemDatabase.I.GetItemByID(id)
+            );
         }
 
+        Object.FindFirstObjectByType<SeedDisplayUI>()?.UpdateSeedDisplay();
 
-        // Restore only the in-game day number
         TimeManager.I.SetDay(data.dayNumber);
 
         foreach (var t in data.tiles)
@@ -78,4 +85,5 @@ public class SaveManager : MonoBehaviour
 
         Debug.Log("Farm loaded successfully!");
     }
+
 }
