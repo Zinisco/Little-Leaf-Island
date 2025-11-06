@@ -167,8 +167,8 @@ MonoBehaviour:
     y: 0
     width: 1030
     height: 445
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 201, y: 226}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
@@ -301,8 +301,8 @@ MonoBehaviour:
     y: 0
     width: 459
     height: 917
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 22}
   m_Panes:
   - {fileID: 22}
@@ -604,8 +604,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Game\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1928
-    y: 532
+    x: 0
+    y: 469
     width: 1029
     height: 446
   m_SerializedDataModeController:
@@ -705,8 +705,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1928
-    y: 87
+    x: 0
+    y: 24
     width: 1029
     height: 419
   m_SerializedDataModeController:
@@ -1327,7 +1327,7 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: 0.15674417, y: 0.3251641, z: -0.05482372, w: 0.9310946}
     speed: 2
-    m_Value: {x: 0.15672511, y: 0.32512456, z: -0.054817054, w: 0.9309814}
+    m_Value: {x: -0.15674417, y: -0.3251641, z: 0.05482372, w: -0.9310945}
   m_Size:
     m_Target: 4.2084956
     speed: 2
@@ -1460,8 +1460,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Hierarchy\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 2958
-    y: 87
+    x: 1
+    y: 24
     width: 413
     height: 375
   m_SerializedDataModeController:
@@ -1483,18 +1483,18 @@ MonoBehaviour:
       m_ExpandedIDs: e2e2fdff0ee3fdff90a2ffffa6a2ffffeaa2ffff04a3ffff18a3ffffccf0ffff20fbffff7ea80000f0a80000f4a800004aa90000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: Rock02
-        m_OriginalName: Rock02
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 54506
+        m_UserData: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 10}
@@ -1526,8 +1526,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 2958
-    y: 488
+    x: 1
+    y: 425
     width: 413
     height: 490
   m_SerializedDataModeController:
@@ -1570,7 +1570,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 86590000
     m_LastClickedID: 22918
-    m_ExpandedIDs: 000000005aaf00005caf00005eaf000060af000062af000064af000066af000068af00006aaf00006caf00006eaf000070af000072af000074af000076af000078af00007aaf00007caf00007eaf000080af000082af000084af000086af0000
+    m_ExpandedIDs: 000000009aaf00009caf00009eaf0000a0af0000a2af0000a4af0000a6af0000a8af0000aaaf0000acaf0000aeaf0000b0af0000b2af0000b4af0000b6af0000b8af0000baaf0000bcaf0000beaf0000c0af0000c2af0000c4af0000c6af0000c8af0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1599,21 +1599,21 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 720}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff000000005aaf00005caf00005eaf000060af000062af000064af000066af000068af00006aaf00006caf00006eaf000070af000072af000074af000076af000078af00007aaf00007caf00007eaf000080af000082af000084af000086af0000c6b10000
+    m_ExpandedIDs: 000000009aaf00009caf00009eaf0000a0af0000a2af0000a4af0000a6af0000a8af0000aaaf0000acaf0000aeaf0000b0af0000b2af0000b4af0000b6af0000b8af0000baaf0000bcaf0000beaf0000c0af0000c2af0000c4af0000c6af0000c8af0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: Rock04
-      m_OriginalName: Rock04
+      m_Name: 
+      m_OriginalName: 
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 43400
+      m_UserData: 0
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 0
+      m_OriginalEventType: 11
       m_IsRenamingFilename: 1
       m_TrimLeadingAndTrailingWhitespace: 0
       m_ClientGUIView: {fileID: 11}
@@ -1678,8 +1678,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 3373
-    y: 87
+    x: 1446
+    y: 24
     width: 458
     height: 891
   m_SerializedDataModeController:

@@ -103,8 +103,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 744e191d46f4d0547ac3d42900818db7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  outlineGlowMaterial: {fileID: 2100000, guid: eb249f1d2a1e6e349a4e1263e49fcebf, type: 2}
-  outlineYOffset: 0.05
+  overlayGlowMaterial: {fileID: 2100000, guid: eb249f1d2a1e6e349a4e1263e49fcebf, type: 2}
   hoverScale: 1.06
   pulseDuration: 0.12
 --- !u!1001 &3613975198807431839

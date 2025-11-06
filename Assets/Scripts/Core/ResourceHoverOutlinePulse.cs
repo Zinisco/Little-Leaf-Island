@@ -3,29 +3,31 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
-public class ResourceHoverOutlinePulse : MonoBehaviour
+public class ResourceHoverGlowOverlay : MonoBehaviour
 {
-    [Header("Outline")]
-    public Material outlineGlowMaterial;          // assign your O3 glow material in Inspector
-    [Range(0.01f, 0.25f)] public float outlineYOffset = 0.05f;
+    [Header("Overlay Glow Material (Assign M_ToonGlowOverlay)")]
+    public Material overlayGlowMaterial;
 
-    [Header("Pulse")]
-    [Range(1.0f, 1.2f)] public float hoverScale = 1.06f;  // P2 ~ 6%
+    [Header("Scale Pulse")]
+    [Range(1.0f, 1.2f)] public float hoverScale = 1.06f;
     [Range(0.05f, 0.4f)] public float pulseDuration = 0.12f;
 
     Renderer[] renderers;
-    // Cache original materials per renderer so we can cleanly restore
     Dictionary<Renderer, Material[]> originalMats = new Dictionary<Renderer, Material[]>();
 
-    Transform target;          // what we scale, defaults to this.transform
+    Transform target;
     Vector3 baseScale;
     Coroutine scaleRoutine;
 
     void Awake()
     {
         renderers = GetComponentsInChildren<Renderer>(true);
+
+        // Store original materials
         foreach (var r in renderers)
-            originalMats[r] = r.sharedMaterials;   // shared to avoid runtime instantiation here
+        {
+            originalMats[r] = r.sharedMaterials;
+        }
 
         target = transform;
         baseScale = target.localScale;
@@ -33,57 +35,44 @@ public class ResourceHoverOutlinePulse : MonoBehaviour
 
     void OnMouseEnter()
     {
-        // No hover while in expansion mode
-        if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive) return;
+        if (overlayGlowMaterial == null) return;
 
-        ApplyOutline(true);
+        AddOverlay();
         StartScaleTo(hoverScale);
-
-        // Optional: place a ring if you still want a top indicator
-        // Shift object up slightly only if you use a ring mesh. Otherwise skip.
-        // var top = GetTopY();
-        // if (ringPrefab) Instantiate(ringPrefab, new Vector3(transform.position.x, top + outlineYOffset, transform.position.z), Quaternion.identity, transform);
     }
 
     void OnMouseExit()
     {
-        ApplyOutline(false);
+        RemoveOverlay();
         StartScaleTo(1f);
     }
 
     void OnDisable()
     {
-        // defensive restore
-        ApplyOutline(false);
+        RemoveOverlay();
         if (scaleRoutine != null) StopCoroutine(scaleRoutine);
         target.localScale = baseScale;
     }
 
-    void ApplyOutline(bool on)
+    void AddOverlay()
     {
-        if (outlineGlowMaterial == null) return;
-
-        if (on)
+        foreach (var r in renderers)
         {
-            foreach (var r in renderers)
+            var mats = new List<Material>(r.sharedMaterials);
+            if (!mats.Contains(overlayGlowMaterial))
             {
-                var mats = new List<Material>(r.materials); // instanced at runtime
-                // Avoid duplicates
-                if (!mats.Contains(outlineGlowMaterial))
-                {
-                    mats.Add(outlineGlowMaterial);
-                    r.materials = mats.ToArray();
-                }
+                mats.Add(overlayGlowMaterial);
+                r.materials = mats.ToArray(); // Assign runtime instance
             }
         }
-        else
+    }
+
+    void RemoveOverlay()
+    {
+        foreach (var r in renderers)
         {
-            foreach (var r in renderers)
-            {
-                // restore to original shared materials to keep things clean
-                if (originalMats.TryGetValue(r, out var orig))
-                    r.sharedMaterials = orig;
-            }
+            if (originalMats.TryGetValue(r, out var orig))
+                r.sharedMaterials = orig; // restore clean
         }
     }
 
@@ -98,6 +87,7 @@ public class ResourceHoverOutlinePulse : MonoBehaviour
         Vector3 start = target.localScale;
         Vector3 end = baseScale * targetMul;
         float t = 0f;
+
         while (t < 1f)
         {
             t += Time.unscaledDeltaTime / pulseDuration;
@@ -105,16 +95,7 @@ public class ResourceHoverOutlinePulse : MonoBehaviour
             target.localScale = Vector3.Lerp(start, end, k);
             yield return null;
         }
-        target.localScale = end;
-    }
 
-    float GetTopY()
-    {
-        float top = transform.position.y;
-        foreach (var r in renderers)
-        {
-            if (r != null) top = Mathf.Max(top, r.bounds.max.y);
-        }
-        return top;
+        target.localScale = end;
     }
 }

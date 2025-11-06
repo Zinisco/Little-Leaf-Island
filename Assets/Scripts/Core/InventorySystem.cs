@@ -227,6 +227,17 @@ public class InventorySystem : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
+    public void MoveSlot(int from, int to)
+    {
+        var slots = this.slots;
+
+        // Simple swap for now
+        var temp = slots[from];
+        slots[from] = slots[to];
+        slots[to] = temp;
+
+        OnInventoryChanged?.Invoke();
+    }
 
     // Optional: expose slots for UI
     public IReadOnlyList<InventorySlot> Slots => slots;

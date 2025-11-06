@@ -2,6 +2,13 @@ using UnityEngine;
 
 public class ToolManager : MonoBehaviour
 {
+    [System.Serializable]
+    public class CursorData
+    {
+        public Texture2D texture;
+        public Vector2 hotspot;
+    }
+
     public static ToolManager I;
 
     public enum Tool { Selection, Shovel, Water, Seed, Axe, Pickaxe }
@@ -20,8 +27,12 @@ public class ToolManager : MonoBehaviour
     [Header("Camera Grab Cursor")]
     public Texture2D cursorGrabClosed;
 
-    Vector2 cursorHotspot = new Vector2(8, 8); // tweak per texture
-    Vector2 grabHotspot = new Vector2(16, 16); // tweak per grab icon
+    [Header("Debug")]
+    [SerializeField] bool showHotspotDebug = true;
+
+    // Optional fallbacks if no marker found
+    [SerializeField] Vector2 fallbackHotspot = Vector2.zero;
+    [SerializeField] Vector2 grabFallbackHotspot = new Vector2(16, 16);
 
     void Awake()
     {
@@ -60,14 +71,18 @@ public class ToolManager : MonoBehaviour
         // RMB or MMB held = Camera grab cursor
         if (Input.GetMouseButton(1) || Input.GetMouseButton(2))
         {
-            Cursor.SetCursor(cursorGrabClosed, grabHotspot, CursorMode.Auto);
+            // Try to detect hotspot on grab icon; fall back if no marker
+            Vector2 hotspot = TryDetectHotspot(cursorGrabClosed, grabFallbackHotspot);
+            Cursor.SetCursor(cursorGrabClosed, hotspot, CursorMode.Auto);
             return;
         }
 
         ApplyCursor();
     }
 
-
+    // -----------------------------
+    // Public API
+    // -----------------------------
     public void CycleTool(float direction)
     {
         if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
@@ -80,14 +95,12 @@ public class ToolManager : MonoBehaviour
         SetTool((Tool)index);
     }
 
-    void SetTool(Tool newTool)
+    public void SetTool(Tool newTool)
     {
         currentTool = newTool;
-
         if (!InventoryUIController.IsOpen)
             ApplyCursor();
     }
-
 
     public void ApplyCursor()
     {
@@ -103,12 +116,90 @@ public class ToolManager : MonoBehaviour
             case Tool.Pickaxe: tex = cursorPickaxe; break;
         }
 
-        Cursor.SetCursor(tex, cursorHotspot, CursorMode.Auto);
+        Vector2 hotspot = TryDetectHotspot(tex, fallbackHotspot);
+        Cursor.SetCursor(tex, hotspot, CursorMode.Auto);
     }
 
     public void ForceDefaultCursor()
     {
-        Cursor.SetCursor(cursorDefault, cursorHotspot, CursorMode.Auto);
+        Vector2 hotspot = TryDetectHotspot(cursorDefault, fallbackHotspot);
+        Cursor.SetCursor(cursorDefault, hotspot, CursorMode.Auto);
     }
 
+    // -----------------------------
+    // Hotspot detection
+    // -----------------------------
+
+    // Tries to detect a single pure-white (255,255,255) pixel and converts to Unity hotspot coords.
+    // Falls back to provided default if none found or texture unreadable.
+    Vector2 TryDetectHotspot(Texture2D tex, Vector2 fallback)
+    {
+        if (tex == null) return fallback;
+
+        // If not readable, we can't scan pixels; return fallback.
+        if (!tex.isReadable)
+            return fallback;
+
+        // Scan for the first pure white marker.
+        // We’ll scan left->right, top->bottom so artists can place a known "tip" near top-left if desired.
+        // Note: GetPixels32() returns pixels with origin at bottom-left, so we’ll convert properly below.
+        Color32[] pixels;
+        try
+        {
+            pixels = tex.GetPixels32();
+        }
+        catch
+        {
+            return fallback;
+        }
+
+        int w = tex.width;
+        int h = tex.height;
+
+        // Iterate in "top-left to bottom-right" visual order:
+        // visualY = top row (h-1) down to 0; x = 0..w-1
+        for (int visualY = h - 1; visualY >= 0; visualY--)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                // Convert visual coords to array index (array origin is bottom-left)
+                int arrayY = visualY; // because pixels[] origin is bottom-left (y=0), visualY already matches that base index
+                int idx = arrayY * w + x;
+
+                Color32 c = pixels[idx];
+                if (c.r == 255 && c.g == 255 && c.b == 255 && c.a > 0)
+                {
+                    // Convert pixel-space (origin bottom-left) to Unity hotspot (origin TOP-left)
+                    // Unity expects (0,0) = TOP-left
+                    int unityY = (h - 1) - arrayY;
+
+                    return new Vector2(x, unityY);
+                }
+            }
+        }
+
+        // No marker found
+        return fallback;
+    }
+
+    // -----------------------------
+    // Debug overlay
+    // -----------------------------
+    void OnGUI()
+    {
+        if (!showHotspotDebug) return;
+
+        Event e = Event.current;
+        if (e == null) return;
+
+        Vector2 mousePos = e.mousePosition;
+
+        // Draw a small crosshair at the *actual* click pixel Unity sees
+        GUI.color = Color.red;
+        GUI.DrawTexture(new Rect(mousePos.x - 2, mousePos.y - 2, 4, 4), Texture2D.whiteTexture);
+
+        GUI.color = Color.white;
+        GUI.Label(new Rect(mousePos.x + 10, mousePos.y + 10, 320, 30),
+            $"Click Pixel: {mousePos}");
+    }
 }

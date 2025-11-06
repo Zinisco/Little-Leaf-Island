@@ -203,6 +203,11 @@ public class TileManager : MonoBehaviour
         var go = Instantiate(prefab, parent);
         go.transform.localPosition = Vector3.zero;
 
+        var rng = CoordRng(p);
+        float randomY = (float)rng.NextDouble() * 360f;
+        go.transform.rotation = Quaternion.Euler(0, randomY, 0);
+
+
         // Compute correct world pos for height offset
         var pos = GridToWorld(p.x, p.y);
 
@@ -259,6 +264,11 @@ public class TileManager : MonoBehaviour
 
         var pos = GridToWorld(x, y);
         var go = Instantiate(prefab, pos, Quaternion.identity, islandRoot);
+
+        var rng = CoordRng(key);
+        float randomY = (float)rng.NextDouble() * 360f;
+        go.transform.rotation = Quaternion.Euler(0, randomY, 0);
+
 
         // Raise the real resource above the tile
         var renderers = go.GetComponentsInChildren<Renderer>();
