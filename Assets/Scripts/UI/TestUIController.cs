@@ -3,53 +3,42 @@ using TMPro;
 
 public class TestUIController : MonoBehaviour
 {
-    [Header("UI References")]
-    public TMP_Text dayLabel;   // Single TMP label showing all info
-    public UnityEngine.UI.Button saveButton;
-    public UnityEngine.UI.Button loadButton;
-    public UnityEngine.UI.Button skipDayButton;
+    public TMP_Text dayLabel;
 
-    float timer = 0f;
+    float timer;
 
     void Start()
     {
-        // Hook up button clicks
-        saveButton.onClick.AddListener(() => SaveManager.I.SaveFarm());
-        loadButton.onClick.AddListener(() => SaveManager.I.LoadFarm());
-        skipDayButton.onClick.AddListener(() => TimeManager.I.SkipDay());
+        var t = TimeManager.I;
+        if (t == null) return;
 
-        // Subscribe to time updates
-        TimeManager.I.OnDayChanged += UpdateDayLabel;
+        t.OnDayChanged += Refresh;
+        t.OnPhaseChanged += _ => Refresh();
+        t.OnClockTick += _ => { /* optional per-frame if you want smooth time */ };
 
-        UpdateDayLabel();
+        Refresh();
     }
 
     void OnDestroy()
     {
-        if (TimeManager.I != null)
-            TimeManager.I.OnDayChanged -= UpdateDayLabel;
+        var t = TimeManager.I;
+        if (t == null) return;
+        t.OnDayChanged -= Refresh;
+        t.OnPhaseChanged -= _ => Refresh();
+        t.OnClockTick -= _ => { };
     }
 
     void Update()
     {
-        // Update every 1 second
         timer += Time.deltaTime;
-        if (timer >= 1f)
-        {
-            timer = 0f;
-            UpdateDayLabel();
-        }
+        if (timer >= 1f) { timer = 0f; Refresh(); }
     }
 
-    void UpdateDayLabel()
+    void Refresh()
     {
-        if (dayLabel == null) return;
+        if (dayLabel == null || TimeManager.I == null) return;
 
-        string dateStr = $"{TimeManager.I.currentDate:MMMM dd, yyyy}";
-        string dayNumStr = $"Day {TimeManager.I.DayNumber}";
-        string timeStr = TimeManager.I.GetCurrentTimeFormatted();
-
-        // Order: Date -> Day Number -> Time
-        dayLabel.text = $"{dateStr}\n{dayNumStr}\n{timeStr}";
+        string phase = TimeManager.I.IsDaytime ? "Day" : "Night";
+        dayLabel.text = $"Day {TimeManager.I.DayNumber} — {TimeManager.I.GetCurrentTimeFormatted()} ({phase}){(TimeManager.I.IsPaused ? " (Paused)" : "")}";
     }
 }

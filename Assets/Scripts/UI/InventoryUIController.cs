@@ -46,11 +46,16 @@ public class InventoryUIController : MonoBehaviour
         IsOpen = !IsOpen;
         inventoryPanel.SetActive(IsOpen);
 
+        // NEW: pause/unpause game time while inventory is open
+        if (TimeManager.I != null)
+            TimeManager.I.SetPaused(IsOpen);
+
         if (IsOpen)
             ToolManager.I.ForceDefaultCursor();
         else
             ToolManager.I.ApplyCursor();
     }
+
 
     string BuildBreakdown(InventorySystem.ShippingSaleResult result)
     {

@@ -853,10 +853,6 @@ public class InventorySystem : MonoBehaviour
         return merged;
     }
 
-
-
-
-
     // Expose inventory slots (unchanged)
     public IReadOnlyList<InventorySlot> Slots => slots;
 }

@@ -8,9 +8,6 @@ public class Tile : MonoBehaviour
 
     public State state = State.Grass;
 
-    DateTime lastShovelTime;
-    public double revertAfterRealDays = 1.0; // 1 real life day
-
     GameObject highlightInstance;
     [HideInInspector] public GameObject currentVisual;
 
@@ -18,7 +15,9 @@ public class Tile : MonoBehaviour
     [Header("Crop State")]
     public CropDefinition crop;    // what crop is planted here?
     int growthStage = 0;           // which visual stage index
-    DateTime lastWaterTime;        // last day watered
+    int lastShovelDay;   // last in-game day shovel was used
+    int lastWaterDay;    // last in-game day tile was watered
+
 
     GameObject plantedObject = null;
     Transform cropAnchor;
@@ -53,69 +52,46 @@ public class Tile : MonoBehaviour
 
     void Update()
     {
-        if (crop != null)
-            CheckGrowth();
-        else
-            CheckSoilRevert();
+
     }
 
     void OnEnable()
     {
-        TimeManager.I.OnDayChanged += CheckDayUpdate;
+        if (TimeManager.I != null)
+            TimeManager.I.OnSunrise += OnSunriseTick;
     }
 
     void OnDisable()
     {
         if (TimeManager.I != null)
-            TimeManager.I.OnDayChanged -= CheckDayUpdate;
+            TimeManager.I.OnSunrise -= OnSunriseTick;
     }
 
-    void CheckDayUpdate()
+    void OnSunriseTick()
     {
-        // Let the crop try to grow first
-        if (crop != null)
-            CheckGrowth();
-        else
-            CheckSoilRevert();
-
-        // After growth checks, dry any wet soil
+        // Dry wet soil each new day
         if (state == State.WetSoil)
         {
             state = State.Soil;
+            UpdateVisual();
+        }
 
-            // Pick correct visual based on whether a crop exists
-            if (crop != null)
-            {
-                if (currentVisual != null)
-                    Destroy(currentVisual);
-
-                currentVisual = Instantiate(
-                    TileManager.I.seededSoilDryPrefab,
-                    transform.position,
-                    Quaternion.identity,
-                    transform
-                );
-
-                UpdateCropAnchor();
-                RefreshCropVisual();
-            }
-            else
-            {
-                UpdateVisual();
-            }
-
-            Debug.Log($"Soil at {x},{y} dried out for the new day.");
+        // Grow one stage if soil was wet yesterday (simple rule: be wet at sunrise)
+        if (crop != null && /* was wet last day? your flag if you track it */ true)
+        {
+            growthStage = Mathf.Min(growthStage + 1, crop.StageCount - 1);
+            RefreshCropVisual();
+            Debug.Log($"Crop at {x},{y} grew at sunrise to stage {growthStage}");
         }
     }
-
-
 
     public void Shovel()
     {
         if (state != State.Grass) return;
 
         state = State.Soil;
-        lastShovelTime = TimeManager.I.currentDate;
+        UpdateCropAnchor();
+        lastShovelDay = TimeManager.I.DayNumber;
         UpdateVisual();
         PlayHoeFX();
     }
@@ -130,7 +106,7 @@ public class Tile : MonoBehaviour
         crop = TileManager.I.carrotCrop;
         growthStage = 0;
         lastGrowthDayNumber = TimeManager.I.DayNumber;
-        lastWaterTime = TimeManager.I.currentDate;
+        lastWaterDay = TimeManager.I.DayNumber;
 
         Debug.Log($"Planted {crop.displayName} at {x},{y}");
 
@@ -162,7 +138,7 @@ public class Tile : MonoBehaviour
         if (state == State.Soil || state == State.WetSoil)
         {
             state = State.WetSoil;
-            lastWaterTime = TimeManager.I.currentDate;
+            lastWaterDay = TimeManager.I.DayNumber;
 
             // If there’s a crop planted, use wet seeded soil
             if (crop != null)
@@ -267,7 +243,7 @@ public class Tile : MonoBehaviour
         {
             crop = null;
             state = State.Soil;
-            lastShovelTime = TimeManager.I.currentDate;
+            lastShovelDay = TimeManager.I.DayNumber;
 
             if (currentVisual != null) Destroy(currentVisual);
             currentVisual = Instantiate(
@@ -290,24 +266,21 @@ public class Tile : MonoBehaviour
 
     void CheckSoilRevert()
     {
-        DateTime now = TimeManager.I.currentDate;
+        int currentDay = TimeManager.I.DayNumber;
 
-        // Only revert if no crop
-        if (crop != null) return;
-
-        if (state == State.Soil && lastShovelTime.Date < now.Date)
+        if (state == State.Soil && lastShovelDay < currentDay)
         {
             state = State.Grass;
             UpdateVisual();
         }
 
-        if (state == State.WetSoil && lastWaterTime.Date < now.Date)
+        if (state == State.WetSoil && lastWaterDay < currentDay)
         {
             state = State.Soil;
             UpdateVisual();
         }
-    }
 
+    }
 
 
     // ----------------------------------------------------------
