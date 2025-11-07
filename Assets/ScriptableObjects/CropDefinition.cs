@@ -4,18 +4,25 @@ using UnityEngine;
 public class CropDefinition : ScriptableObject
 {
     [Header("Basic Data")]
-    public string id;                         // "carrot"
-    public string displayName = "Unnamed";    // UI-friendly name
+    public string id;
+    public string displayName = "Unnamed";
 
-    [Header("Visual Growth Stages")]
-    public GameObject[] stagePrefabs;         // Prefabs for each growth stage
+    [Header("Growth Stages")]
+    public GameObject[] stagePrefabs;
 
     [Header("Growth Rules")]
-    public int daysToGrow = 3;                // Real-world midnights required
-    public bool regrows = false;              // If it regrows after harvest
+    public int daysToGrow = 3;
+    public bool regrows = false;
 
-    [Header("Economy")]
-    public int sellPrice = 5;                 // Coins per harvest
+    [Header("Harvest Output")]
+    public ItemDefinition outputItem;     // normal item produced
+    public int outputQuantity = 1;
+
+    [Header("Rare Harvest (Optional)")]
+    public bool hasRareHarvest = false;
+    public ItemDefinition rareItem;     // e.g., GoldenCarrot
+    public bool rareReplaces = true;    // true = replace main item, false = add to it
+    [Range(0, 100)] public float rareChance = 5f;  // % per harvest
 
     public int StageCount => stagePrefabs?.Length ?? 0;
 }

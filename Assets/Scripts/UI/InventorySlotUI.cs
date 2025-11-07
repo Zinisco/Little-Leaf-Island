@@ -5,9 +5,10 @@ using UnityEngine.EventSystems;
 
 public class InventorySlotUI : MonoBehaviour,
     IPointerEnterHandler, IPointerExitHandler,
-    IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler,
+    IPointerClickHandler   // <-- NEW
 {
-    [SerializeField] Image slotImage; 
+    [SerializeField] Image slotImage;
     [SerializeField] Image iconImage;
     [SerializeField] TMP_Text qtyText;
 
@@ -26,11 +27,9 @@ public class InventorySlotUI : MonoBehaviour,
     {
         originalScale = transform.localScale;
 
-        // If not manually assigned, auto-grab the Image on this object
         if (!slotImage)
             slotImage = GetComponent<Image>();
 
-        // Children shouldn’t block raycasts
         if (iconImage) iconImage.raycastTarget = false;
         if (qtyText) qtyText.raycastTarget = false;
 
@@ -55,18 +54,15 @@ public class InventorySlotUI : MonoBehaviour,
 
     void Update()
     {
-        // Scale
         Vector3 targetScale = isHovered ? originalScale * hoverScale : originalScale;
         transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.unscaledDeltaTime * scaleSpeed);
 
-        // Color fade on root image
         if (slotImage)
         {
             Color target = isHovered ? hoverColor : normalColor;
             slotImage.color = Color.Lerp(slotImage.color, target, Time.unscaledDeltaTime * colorFadeSpeed);
         }
 
-        // Scroll safety — remove hover if mouse moved off while scrolling
         if (isHovered && !RectTransformUtility.RectangleContainsScreenPoint(
             (RectTransform)transform, Input.mousePosition))
         {
@@ -90,16 +86,86 @@ public class InventorySlotUI : MonoBehaviour,
         {
             iconImage.enabled = true;
             iconImage.sprite = slot.item.icon;
-            qtyText.text = slot.quantity > 1 ? slot.quantity.ToString() : "";
+            qtyText.text = slot.quantity > 0 ? slot.quantity.ToString() : "";
         }
     }
 
+    // ----- Click logic -----
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        var inv = InventorySystem.I;
+        var dc = InventoryDragController.I;
+
+        // --- SHIFT + LEFT: smart move to Shipping ---
+        if (eventData.button == PointerEventData.InputButton.Left && dc.IsShiftDown && !dc.IsDragging)
+        {
+            inv.SmartMoveInventoryToShipping(slotIndex);
+            Refresh();
+            return;
+        }
+
+        // --- RIGHT: (existing) partial from Inventory ---
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            var slot = inv.Slots[slotIndex];
+            if (slot.IsEmpty) return;
+
+            if (!dc.IsDragging)
+            {
+                dc.BeginPartialFromInventory(slotIndex, iconImage.sprite, slot.item, slot.quantity);
+                return;
+            }
+
+            if (dc.isPartial && dc.dragSource == InventoryDragController.Source.Inventory && dc.draggedFromIndex == slotIndex)
+            {
+                int currentAvail = inv.GetSlotQuantity(slotIndex);
+                if (inv.GetSlotItem(slotIndex) == dc.draggedItem)
+                    dc.IncrementPartialFromSameSlot(currentAvail);
+            }
+            return;
+        }
+
+        // --- LEFT: place partial dragged stack onto this Inventory slot (from either source) ---
+        if (eventData.button == PointerEventData.InputButton.Left)
+        {
+            if (dc.IsDragging && dc.isPartial)
+            {
+                int placed = 0;
+                if (dc.dragSource == InventoryDragController.Source.Inventory)
+                {
+                    placed = InventorySystem.I.TransferInventoryPartial(dc.draggedFromIndex, slotIndex, dc.draggedCount);
+                }
+                else if (dc.dragSource == InventoryDragController.Source.Shipping)
+                {
+                    placed = InventorySystem.I.TransferShippingToInventoryPartial(dc.draggedFromIndex, slotIndex, dc.draggedCount);
+                }
+
+                if (placed > 0)
+                {
+                    dc.ReduceDraggedBy(placed);
+                    Refresh();
+                }
+
+                if (dc.draggedCount <= 0) dc.EndDrag();
+                return;
+            }
+        }
+    }
+
+
+
+    // ----- Drag & Drop (existing full-drag path) -----
     public void OnBeginDrag(PointerEventData eventData)
     {
+        // If partial-drag is active, ignore the classic drag (we're using click-to-drop flow)
+        if (InventoryDragController.I.isPartial) return;
+
         var slot = InventorySystem.I.Slots[slotIndex];
         if (slot.IsEmpty) return;
 
-        InventoryDragController.I.BeginDrag(iconImage.sprite, slot.quantity, slotIndex);
+        InventoryDragController.I.BeginDrag(
+            InventoryDragController.Source.Inventory,
+            iconImage.sprite, slot.quantity, slotIndex);
 
         iconImage.enabled = false;
         qtyText.text = "";
@@ -109,16 +175,44 @@ public class InventorySlotUI : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        InventoryDragController.I.EndDrag();
-        Refresh();
+        if (!InventoryDragController.I.isPartial) // only end the classic drag
+        {
+            InventoryDragController.I.EndDrag();
+            Refresh();
+        }
     }
 
     public void OnDrop(PointerEventData eventData)
     {
-        int from = InventoryDragController.I.draggedFromIndex;
-        int to = slotIndex;
-        if (from < 0 || from == to) return;
+        var dc = InventoryDragController.I;
+        if (!dc.IsDragging) return;
 
-        InventorySystem.I.MoveSlot(from, to);
+        // Ignore partial — left click handles it
+        if (dc.isPartial) return;
+
+        if (dc.dragSource == InventoryDragController.Source.Inventory)
+        {
+            int moved = InventorySystem.I.MergeOrSwapInventory(dc.draggedFromIndex, slotIndex);
+
+            var fromSlot = InventorySystem.I.Slots[dc.draggedFromIndex];
+
+            if (fromSlot.IsEmpty)
+            {
+                dc.EndDrag();
+            }
+            else
+            {
+                dc.UpdateClassicDragQty(fromSlot.quantity);
+            }
+
+            Refresh();
+        }
+        else if (dc.dragSource == InventoryDragController.Source.Shipping)
+        {
+            InventorySystem.I.TransferShippingToInventory(dc.draggedFromIndex, slotIndex);
+            dc.EndDrag();
+            Refresh();
+        }
     }
+
 }

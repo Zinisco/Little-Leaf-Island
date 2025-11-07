@@ -225,41 +225,62 @@ public class Tile : MonoBehaviour
         if (crop == null) return;
         if (growthStage < crop.StageCount - 1) return;
 
-        Debug.Log($"Harvested {crop.displayName} at {x},{y}! +{crop.sellPrice} coins");
+        // ---- Normal output ----
+        bool gaveNormal = false;
+        if (!crop.rareReplaces || crop.rareItem == null)
+        {
+            if (crop.outputItem != null && crop.outputQuantity > 0)
+            {
+                InventorySystem.I.AddItem(crop.outputItem, crop.outputQuantity);
+                gaveNormal = true;
+            }
+        }
 
-        EconomySystem.I.AddCoins(crop.sellPrice);
-        Destroy(plantedObject);
+        // ---- Rare Harvest ----
+        if (crop.hasRareHarvest && crop.rareItem != null && crop.rareChance > 0f)
+        {
+            if (UnityEngine.Random.Range(0f, 100f) <= crop.rareChance)
+            {
+                if (crop.rareReplaces)
+                {
+                    // Replace normal output (but since we didn't give normal when rareReplaces=true, no need to remove)
+                    InventorySystem.I.AddItem(crop.rareItem, 1);
+                }
+                else
+                {
+                    // Add rare bonus item
+                    InventorySystem.I.AddItem(crop.rareItem, 1);
+                }
+            }
+        }
 
+        // Remove visuals
+        if (plantedObject) Destroy(plantedObject);
+
+        // Regrow or reset soil
         if (crop.regrows)
         {
-            // regrow crops drop to one stage before mature
-            growthStage = crop.StageCount - 2;
+            growthStage = Mathf.Max(0, crop.StageCount - 2);
             SpawnCropVisual();
         }
         else
         {
-            // Reset soil, not grass
             crop = null;
             state = State.Soil;
             lastShovelTime = TimeManager.I.currentDate;
 
-            // Show plain soil (not seeded)
-            if (currentVisual != null)
-                Destroy(currentVisual);
-
+            if (currentVisual != null) Destroy(currentVisual);
             currentVisual = Instantiate(
                 TileManager.I.soilPrefab,
                 transform.position,
                 Quaternion.identity,
                 transform
             );
-
             UpdateCropAnchor();
-
-            Debug.Log($"Tile at {x},{y} reverted to soil after harvest.");
         }
-    }
 
+        Debug.Log($"Harvested at {x},{y}. NormalGiven={gaveNormal}");
+    }
 
 
 

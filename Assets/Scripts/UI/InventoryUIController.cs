@@ -7,6 +7,7 @@ public class InventoryUIController : MonoBehaviour
     [SerializeField] GameObject inventoryPanel;
     [SerializeField] Transform slotContainer;
     [SerializeField] GameObject slotPrefab;
+    [SerializeField] UnityEngine.UI.Button sellNowButton;
 
     void Start()
     {
@@ -18,12 +19,22 @@ public class InventoryUIController : MonoBehaviour
             var ui = Instantiate(slotPrefab, slotContainer);
             ui.GetComponent<InventorySlotUI>().Init(i);
         }
+
+        if (sellNowButton != null)
+            sellNowButton.onClick.AddListener(DoSellNow);
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.I))
             ToggleInventory();
+    }
+
+    void DoSellNow()
+    {
+        var result = InventorySystem.I.SellShippingContents();
+        // For now, log a nice breakdown:
+        Debug.Log(BuildBreakdown(result));
     }
 
     void ToggleInventory()
@@ -40,5 +51,18 @@ public class InventoryUIController : MonoBehaviour
         else
             ToolManager.I.ApplyCursor();
     }
+
+    string BuildBreakdown(InventorySystem.ShippingSaleResult result)
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.AppendLine("Sold:");
+        foreach (var e in result.entries)
+            sb.AppendLine($"{e.item.displayName} ×{e.quantity} -> {e.subtotal} coins");
+
+        sb.AppendLine("-----------------------");
+        sb.AppendLine($"Total: {result.total} coins");
+        return sb.ToString();
+    }
+
 
 }
