@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eb6da8d19b5689b4d93f4f6adad32639, type: 3}
-  m_Name: GoldenCarrotSO
+  m_Name: CarrotSeedSO
   m_EditorClassIdentifier: 
-  itemID: golden_carrot
-  displayName: Golden Carrot
+  itemID: carrot_seed
+  displayName: Carrot Seed
   maxStack: 99
   icon: {fileID: 0}
-  sellPrice: 500
+  sellPrice: 1

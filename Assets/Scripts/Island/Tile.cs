@@ -103,6 +103,13 @@ public class Tile : MonoBehaviour
         if ((state != State.Soil && state != State.WetSoil) || crop != null)
             return;
 
+        // Require 1 carrot seed
+        if (!InventorySystem.TrySpend("carrot_seed", 1))
+        {
+            Debug.Log("No seeds left!");
+            return;
+        }
+
         crop = TileManager.I.carrotCrop;
         growthStage = 0;
         lastGrowthDayNumber = TimeManager.I.DayNumber;
@@ -110,7 +117,6 @@ public class Tile : MonoBehaviour
 
         Debug.Log($"Planted {crop.displayName} at {x},{y}");
 
-        // Replace soil with correct seeded soil visual
         if (currentVisual != null)
             Destroy(currentVisual);
 
@@ -119,18 +125,16 @@ public class Tile : MonoBehaviour
             : TileManager.I.seededSoilDryPrefab;
 
         currentVisual = Instantiate(
-     seededPrefab,
-     transform.position,
-     Quaternion.identity,
-     transform
- );
+            seededPrefab,
+            transform.position,
+            Quaternion.identity,
+            transform
+        );
 
         UpdateCropAnchor();
-
-        // Spawn crop on top using the new anchor
         SpawnCropVisual();
-
     }
+
 
 
     void Water()
@@ -164,36 +168,6 @@ public class Tile : MonoBehaviour
             PlayWaterFX();
         }
     }
-
-
-
-    // ----------------------------------------------------------
-    // Growth System
-    // ----------------------------------------------------------
-
-    void CheckGrowth()
-    {
-        int currentDay = TimeManager.I.DayNumber;
-
-        // Only grow if soil is wet
-        if (state != State.WetSoil)
-        {
-            Debug.Log($"Crop at {x},{y} did not grow today — soil is dry!");
-            return;
-        }
-
-        // Prevent multiple growths on the same in-game day
-        if (lastGrowthDayNumber == currentDay)
-            return;
-
-        // Grow one stage per in-game day
-        lastGrowthDayNumber = currentDay;
-        growthStage = Mathf.Min(growthStage + 1, crop.StageCount - 1);
-        RefreshCropVisual();
-
-        Debug.Log($"Crop at {x},{y} grew to stage {growthStage} on Day {currentDay}");
-    }
-
 
 
     void TryHarvest()

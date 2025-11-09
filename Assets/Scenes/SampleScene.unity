@@ -176,7 +176,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Skip Day
+  m_text: 'Sleep
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -787,6 +789,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 938258268}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &304754831
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 304754832}
+  - component: {fileID: 304754833}
+  m_Layer: 0
+  m_Name: SleepManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &304754832
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304754831}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 938258268}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &304754833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 304754831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80eb0536d7cc110479e5916829686eb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sleepButton: {fileID: 349032184}
+  baseSkipSeconds: 5
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -983,7 +1031,7 @@ GameObject:
   - component: {fileID: 349032185}
   - component: {fileID: 349032184}
   m_Layer: 5
-  m_Name: SkipDayButton
+  m_Name: SleepButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2391,6 +2439,7 @@ Transform:
   - {fileID: 574634238}
   - {fileID: 240108725}
   - {fileID: 68198712}
+  - {fileID: 304754832}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1067251025
@@ -2593,9 +2642,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08b4f3a04bab49247ae8469f4de83b23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dayLengthMinutes: 0.1
+  dayLengthMinutes: 10
   startHour: 8
-  sunriseHour: 6
+  sunriseHour: 8
   sunsetHour: 20
 --- !u!1 &1216287276
 GameObject:

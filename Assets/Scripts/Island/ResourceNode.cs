@@ -8,9 +8,14 @@ public class ResourceNode : MonoBehaviour
     public ResourceType type;
     public int hitPoints = 3;
 
+    [Header("Resource Drops")]
+    public string itemID;          // e.g. "wood", "stone"
+    public int minAmount = 2;      // e.g. 2
+    public int maxAmount = 4;      // e.g. 4
+
     [Header("FX")]
-    public ParticleSystem hitParticles;        // small burst on hit
-    public ParticleSystem breakParticles;      // bigger burst on destroy
+    public ParticleSystem hitParticles;
+    public ParticleSystem breakParticles;
     public AudioClip hitSound;
     public AudioClip breakSound;
     [Range(0f, 1f)] public float hitVolume = 0.6f;
@@ -30,14 +35,12 @@ public class ResourceNode : MonoBehaviour
 
     void Start()
     {
-        baseWorldPos = shakeTarget.position; // capture after TileManager moves it
+        baseWorldPos = shakeTarget.position;
     }
-
 
     public void Hit()
     {
         hitPoints--;
-
         PlayHitFX();
 
         if (hitPoints <= 0)
@@ -56,7 +59,6 @@ public class ResourceNode : MonoBehaviour
         if (hitSound != null)
             AudioSource.PlayClipAtPoint(hitSound, transform.position, hitVolume);
 
-        // tiny shake
         StopAllCoroutines();
         StartCoroutine(ShakeRoutine());
     }
@@ -65,14 +67,13 @@ public class ResourceNode : MonoBehaviour
     {
         var r = GetComponentInChildren<Renderer>();
         if (r == null) return transform.position + Vector3.up * 0.5f;
+
         return new Vector3(r.bounds.center.x, r.bounds.max.y, r.bounds.center.z);
     }
 
     IEnumerator ShakeRoutine()
     {
         float t = 0f;
-
-        // Cache the fixed position at start of shake
         Vector3 startPos = baseWorldPos;
 
         while (t < shakeDuration)
@@ -80,7 +81,6 @@ public class ResourceNode : MonoBehaviour
             t += Time.deltaTime;
             float k = 1f - Mathf.Clamp01(t / shakeDuration);
 
-            // Side-to-side shake only (no Y movement)
             Vector3 offset = new Vector3(
                 (Mathf.PerlinNoise(0, Time.time * 60f) - 0.5f) * shakeAmplitude,
                 0f,
@@ -91,7 +91,6 @@ public class ResourceNode : MonoBehaviour
             yield return null;
         }
 
-        // Reset perfectly to original spot
         shakeTarget.position = baseWorldPos;
     }
 
@@ -107,14 +106,13 @@ public class ResourceNode : MonoBehaviour
         if (breakSound != null)
             AudioSource.PlayClipAtPoint(breakSound, transform.position, breakVolume);
 
-        if (type == ResourceType.Tree)
-        {
-            InventorySystem.Add(InventorySystem.ResourceType.Wood, 1 + Random.Range(5, 10));
-        }
-        else if (type == ResourceType.Rock)
-        {
-            InventorySystem.Add(InventorySystem.ResourceType.Stone, 1 + Random.Range(2, 5));
-        }
+        // Roll random amount
+        int amount = Random.Range(minAmount, maxAmount + 1);
+
+        // Add to inventory
+        InventorySystem.Add(itemID, amount);
+
+        Debug.Log($"Harvested {amount}x {itemID}");
 
         Destroy(gameObject);
     }

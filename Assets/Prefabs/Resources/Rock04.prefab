@@ -71,6 +71,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   hitPoints: 3
+  itemID: stone
+  minAmount: 2
+  maxAmount: 6
   hitParticles: {fileID: 3182946739336243845, guid: b0c26f23dbaa4074fb29c26d351b7a92, type: 3}
   breakParticles: {fileID: 3182946739336243845, guid: 7f089a0ae7e7e9e4db94deb1e2e5e7db, type: 3}
   hitSound: {fileID: 8300000, guid: e80466c6acf5311439e8aa53315f88bb, type: 3}

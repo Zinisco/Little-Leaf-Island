@@ -18,7 +18,7 @@ public class CropDefinition : ScriptableObject
     public ItemDefinition outputItem;     // normal item produced
     public int outputQuantity = 1;
 
-    [Header("Rare Harvest (Optional)")]
+    [Header("Rare Harvest")]
     public bool hasRareHarvest = false;
     public ItemDefinition rareItem;     // e.g., GoldenCarrot
     public bool rareReplaces = true;    // true = replace main item, false = add to it

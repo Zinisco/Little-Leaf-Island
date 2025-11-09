@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class InventorySystem : MonoBehaviour
 {
-    public enum ResourceType { Wood, Stone, Carrot }
-
     public static InventorySystem I;
 
     [Header("Inventory Slots")]
@@ -13,25 +11,16 @@ public class InventorySystem : MonoBehaviour
     [SerializeField] List<InventorySlot> slots = new List<InventorySlot>();
 
     [Header("Shipping Slots")]
-    [SerializeField] int shippingSlotCount = 12;                // 2 rows of 6
+    [SerializeField] int shippingSlotCount = 12; // 2 rows of 6
     [SerializeField] List<InventorySlot> shippingSlots = new List<InventorySlot>();
-
-    [Header("Enum -> Item mapping")]
-    [SerializeField] private ItemDefinition woodItem;
-    [SerializeField] private ItemDefinition stoneItem;
-    [SerializeField] private ItemDefinition carrotItem;
 
     [Header("Sell Prices (fallback map)")]
     [SerializeField] private List<ItemPrice> priceTable = new List<ItemPrice>();
-
     [Serializable] public class ItemPrice { public ItemDefinition item; public int price; }
 
-    // Events
-    public static event Action<ResourceType, int> OnResourceChanged;
+    // Events (generic)
     public static event Action OnInventoryChanged;
     public static event Action OnShippingChanged;
-
-    // Fired when a sale happens (for your UI popup if you want it later)
     public static event Action<ShippingSaleResult> OnShippingSold;
 
     void Awake()
@@ -49,48 +38,48 @@ public class InventorySystem : MonoBehaviour
             for (int i = 0; i < shippingSlotCount; i++)
                 shippingSlots.Add(new InventorySlot());
         }
+
+        // Start player with 9 carrot seeds (via DB)
+        var seed = ItemDatabase.I?.GetItemByID("carrot_seed");
+        if (seed != null) AddItem(seed, 9);
+        else Debug.LogWarning("ItemDatabase missing 'carrot_seed'");
     }
 
-    // ---------- Legacy static API kept intact ----------
-    public static int Get(ResourceType type)
+    // ----------------------------
+    // Static convenience (ID-based)
+    // ----------------------------
+    public static int Count(string id)
     {
-        if (I == null) { Debug.LogWarning("InventorySystem accessed before initialization."); return 0; }
-        var item = I.Resolve(type);
-        return I.CountOf(item);
+        if (I == null) return 0;
+        var def = ItemDatabase.I?.GetItemByID(id);
+        return I?.CountOf(def) ?? 0;
     }
 
-    public static void Add(ResourceType type, int amount)
+    public static void Add(string id, int amount)
     {
-        var item = I.Resolve(type);
-        I.AddItem(item, amount);
-        OnResourceChanged?.Invoke(type, Get(type));
+        if (I == null) { Debug.LogWarning("InventorySystem not initialized."); return; }
+        var def = ItemDatabase.I?.GetItemByID(id);
+        if (def == null) { Debug.LogWarning($"Item not found: {id}"); return; }
+
+        I.AddItem(def, amount);
         OnInventoryChanged?.Invoke();
-        Debug.Log($"+{amount} {type} (Total: {Get(type)})");
     }
 
-    public static bool TrySpend(ResourceType type, int amount)
+    public static bool TrySpend(string id, int amount)
     {
-        var item = I.Resolve(type);
-        if (!I.CanRemove(item, amount)) return false;
+        if (I == null) return false;
+        var def = ItemDatabase.I?.GetItemByID(id);
+        if (def == null) return false;
 
-        I.RemoveItem(item, amount);
-        OnResourceChanged?.Invoke(type, Get(type));
+        if (!I.CanRemove(def, amount)) return false;
+        I.RemoveItem(def, amount);
         OnInventoryChanged?.Invoke();
         return true;
     }
 
-    // ---------- New slot-based engine (Inventory) ----------
-    ItemDefinition Resolve(ResourceType type)
-    {
-        switch (type)
-        {
-            case ResourceType.Wood: return woodItem;
-            case ResourceType.Stone: return stoneItem;
-            case ResourceType.Carrot: return carrotItem;
-        }
-        return null;
-    }
-
+    // ----------------------------
+    // Core inventory (ItemDefinition-based)
+    // ----------------------------
     public int CountOf(ItemDefinition item)
     {
         if (item == null) return 0;
@@ -164,22 +153,21 @@ public class InventorySystem : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
-    // ---------- Shipping Bin API ----------
+    // ----------------------------
+    // Shipping bin API (unchanged behavior)
+    // ----------------------------
     public IReadOnlyList<InventorySlot> ShippingSlots => shippingSlots;
 
     public bool AddToShipping(ItemDefinition item, int amount, int toIndex)
     {
         if (item == null || amount <= 0) return false;
 
-        // Try stack if same item in target
         var slot = shippingSlots[toIndex];
         if (slot.IsEmpty)
         {
             slot.item = item;
             slot.quantity = Mathf.Min(item.maxStack, amount);
             int remainder = amount - slot.quantity;
-
-            // spill remainder anywhere in shipping
             if (remainder > 0) TryAddShippingOverflow(item, remainder);
         }
         else if (slot.item == item && !slot.IsFull)
@@ -192,7 +180,6 @@ public class InventorySystem : MonoBehaviour
         }
         else
         {
-            // Different item in target slot -> try general add
             TryAddShippingOverflow(item, amount);
         }
 
@@ -226,22 +213,17 @@ public class InventorySystem : MonoBehaviour
         var ship = shippingSlots[shipIndex];
         if (ship.IsEmpty) return false;
 
-        // Try add fully into inventory; if some remainder, keep it in shipping
         int qty = ship.quantity;
         ItemDefinition item = ship.item;
 
-        // Attempt to add; simulate: add then clear
         ship.Clear();
         OnShippingChanged?.Invoke();
 
         bool ok = AddItem(item, qty);
         if (!ok)
         {
-            // if inventory couldn't take all, try to put back what didn't fit (best effort)
-            // Here we keep it simple: if AddItem returned false, we assume some remainder.
-            // Put a single full stack back so nothing gets lost.
             shippingSlots[shipIndex].item = item;
-            shippingSlots[shipIndex].quantity = qty; // conservative; user can drag again
+            shippingSlots[shipIndex].quantity = qty;
             OnShippingChanged?.Invoke();
             return false;
         }
@@ -251,7 +233,6 @@ public class InventorySystem : MonoBehaviour
 
     bool TryAddShippingOverflow(ItemDefinition item, int amount)
     {
-        // 1) Fill existing stacks
         foreach (var s in shippingSlots)
         {
             if (!s.IsEmpty && s.item == item && !s.IsFull)
@@ -263,7 +244,6 @@ public class InventorySystem : MonoBehaviour
                 if (amount <= 0) return true;
             }
         }
-        // 2) Empty slots
         foreach (var s in shippingSlots)
         {
             if (s.IsEmpty)
@@ -279,16 +259,13 @@ public class InventorySystem : MonoBehaviour
 
     public int GetPrice(ItemDefinition def)
     {
-        if (def != null && def.sellPrice > 0)        // <- use per-item price first
-            return def.sellPrice;
+        if (def != null && def.sellPrice > 0) return def.sellPrice;
 
-        // Fallback table (optional)
         foreach (var ip in priceTable)
             if (ip.item == def) return Mathf.Max(0, ip.price);
 
         return 0;
     }
-
 
     // ----- Selling -----
     [Serializable]
@@ -317,7 +294,6 @@ public class InventorySystem : MonoBehaviour
             breakdown[s.item] += s.quantity;
         }
 
-        // clear bin
         foreach (var s in shippingSlots) s.Clear();
         OnShippingChanged?.Invoke();
 
@@ -339,14 +315,13 @@ public class InventorySystem : MonoBehaviour
         }
         result.total = totalCoins;
 
-        if (totalCoins > 0)
-            EconomySystem.I.AddCoins(totalCoins);
+        if (totalCoins > 0) EconomySystem.I.AddCoins(totalCoins);
 
         OnShippingSold?.Invoke(result);
         return result;
     }
 
-    // ---------- Save helpers unchanged ----------
+    // ---------- Save helpers ----------
     public Dictionary<string, int> ExportAll()
     {
         var dict = new Dictionary<string, int>();
@@ -374,9 +349,6 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        OnResourceChanged?.Invoke(ResourceType.Wood, Get(ResourceType.Wood));
-        OnResourceChanged?.Invoke(ResourceType.Stone, Get(ResourceType.Stone));
-        OnResourceChanged?.Invoke(ResourceType.Carrot, Get(ResourceType.Carrot));
         OnInventoryChanged?.Invoke();
     }
 
@@ -414,7 +386,7 @@ public class InventorySystem : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
-    // === Helper accessors used by UI ===
+    // --- UI helpers ---
     public int GetSlotQuantity(int index)
     {
         if (index < 0 || index >= slots.Count) return 0;
@@ -427,8 +399,7 @@ public class InventorySystem : MonoBehaviour
         return slots[index].IsEmpty ? null : slots[index].item;
     }
 
-    // === Partial transfer: move up to 'amount' units from ONE inventory slot to ONE target slot ===
-    // Returns how many were actually placed into the target slot.
+    // --- Partial transfers (unchanged behavior) ---
     public int TransferInventoryPartial(int fromIndex, int toIndex, int amount)
     {
         if (amount <= 0) return 0;
@@ -438,46 +409,21 @@ public class InventorySystem : MonoBehaviour
 
         var from = slots[fromIndex];
         var to = slots[toIndex];
-
         if (from.IsEmpty) return 0;
 
         ItemDefinition item = from.item;
-
-        // Determine how much can fit into the target slot
         int canPlace = 0;
 
-        if (to.IsEmpty)
-        {
-            canPlace = Mathf.Min(item.maxStack, amount);
-        }
-        else if (to.item == item && !to.IsFull)
-        {
-            int space = item.maxStack - to.quantity;
-            canPlace = Mathf.Min(space, amount);
-        }
-        else
-        {
-            // different item already in target and not empty -> cannot place here
-            return 0;
-        }
+        if (to.IsEmpty) canPlace = Mathf.Min(item.maxStack, amount);
+        else if (to.item == item && !to.IsFull) canPlace = Mathf.Min(item.maxStack - to.quantity, amount);
+        else return 0;
 
         if (canPlace <= 0) return 0;
-
-        // Clamp by what's available in 'from'
         canPlace = Mathf.Min(canPlace, from.quantity);
 
-        // Apply to target
-        if (to.IsEmpty)
-        {
-            to.item = item;
-            to.quantity = canPlace;
-        }
-        else
-        {
-            to.quantity += canPlace;
-        }
+        if (to.IsEmpty) { to.item = item; to.quantity = canPlace; }
+        else { to.quantity += canPlace; }
 
-        // Remove from source
         from.quantity -= canPlace;
         if (from.quantity <= 0) from.Clear();
 
@@ -485,8 +431,6 @@ public class InventorySystem : MonoBehaviour
         return canPlace;
     }
 
-    // === Partial transfer: move up to 'amount' units from ONE inventory slot to ONE shipping slot ===
-    // Returns how many were actually placed into the shipping slot.
     public int TransferInventoryToShippingPartial(int fromInvIndex, int toShipIndex, int amount)
     {
         if (amount <= 0) return 0;
@@ -498,40 +442,18 @@ public class InventorySystem : MonoBehaviour
         if (from.IsEmpty) return 0;
 
         ItemDefinition item = from.item;
-
-        // S1: only allow empty or same-item (no mixing/swap)
         int canPlace = 0;
-        if (to.IsEmpty)
-        {
-            canPlace = Mathf.Min(item.maxStack, amount);
-        }
-        else if (to.item == item && !to.IsFull)
-        {
-            int space = item.maxStack - to.quantity;
-            canPlace = Mathf.Min(space, amount);
-        }
-        else
-        {
-            return 0; // different item present -> ignore
-        }
+
+        if (to.IsEmpty) canPlace = Mathf.Min(item.maxStack, amount);
+        else if (to.item == item && !to.IsFull) canPlace = Mathf.Min(item.maxStack - to.quantity, amount);
+        else return 0;
 
         if (canPlace <= 0) return 0;
-
-        // Clamp by what's actually available in source
         canPlace = Mathf.Min(canPlace, from.quantity);
 
-        // Apply to shipping
-        if (to.IsEmpty)
-        {
-            to.item = item;
-            to.quantity = canPlace;
-        }
-        else
-        {
-            to.quantity += canPlace;
-        }
+        if (to.IsEmpty) { to.item = item; to.quantity = canPlace; }
+        else { to.quantity += canPlace; }
 
-        // Remove from inventory
         from.quantity -= canPlace;
         if (from.quantity <= 0) from.Clear();
 
@@ -540,7 +462,6 @@ public class InventorySystem : MonoBehaviour
         return canPlace;
     }
 
-    // --- NEW: Merge or Swap Inventory <-> Inventory ---
     public int MergeOrSwapInventory(int fromIndex, int toIndex)
     {
         if (fromIndex == toIndex) return 0;
@@ -551,7 +472,6 @@ public class InventorySystem : MonoBehaviour
         var to = slots[toIndex];
         if (from.IsEmpty) return 0;
 
-        // Empty target slot
         if (to.IsEmpty)
         {
             int move = Mathf.Min(from.quantity, from.item.maxStack);
@@ -563,7 +483,6 @@ public class InventorySystem : MonoBehaviour
             return move;
         }
 
-        // Same item: MERGE
         if (to.item == from.item && !to.IsFull)
         {
             int space = to.item.maxStack - to.quantity;
@@ -575,21 +494,14 @@ public class InventorySystem : MonoBehaviour
             return move;
         }
 
-        // Different item: SWAP
-        var tempItem = to.item;
-        var tempQty = to.quantity;
-
-        to.item = from.item;
-        to.quantity = from.quantity;
-
-        from.item = tempItem;
-        from.quantity = tempQty;
+        var tempItem = to.item; var tempQty = to.quantity;
+        to.item = from.item; to.quantity = from.quantity;
+        from.item = tempItem; from.quantity = tempQty;
 
         OnInventoryChanged?.Invoke();
-        return 0; // Swap didn't "merge" any
+        return 0;
     }
 
-    // --- NEW: Merge Inventory -> SPECIFIC Shipping slot ---
     public int MergeInventoryIntoSpecificShipping(int fromInvIndex, int toShipIndex)
     {
         if (fromInvIndex < 0 || fromInvIndex >= slots.Count) return 0;
@@ -601,7 +513,6 @@ public class InventorySystem : MonoBehaviour
 
         ItemDefinition item = from.item;
 
-        // Empty slot
         if (to.IsEmpty)
         {
             int move = Mathf.Min(from.quantity, item.maxStack);
@@ -614,7 +525,6 @@ public class InventorySystem : MonoBehaviour
             return move;
         }
 
-        // Same item: MERGE
         if (to.item == item && !to.IsFull)
         {
             int space = item.maxStack - to.quantity;
@@ -627,10 +537,9 @@ public class InventorySystem : MonoBehaviour
             return move;
         }
 
-        return 0; // different item present = cannot merge here
+        return 0;
     }
 
-    // === Partial transfer: Shipping -> Inventory ===
     public int TransferShippingToInventoryPartial(int fromShipIndex, int toInvIndex, int amount)
     {
         if (amount <= 0) return 0;
@@ -642,21 +551,11 @@ public class InventorySystem : MonoBehaviour
         if (from.IsEmpty) return 0;
 
         ItemDefinition item = from.item;
-
         int canPlace = 0;
-        if (to.IsEmpty)
-        {
-            canPlace = Mathf.Min(item.maxStack, amount);
-        }
-        else if (to.item == item && !to.IsFull)
-        {
-            int space = item.maxStack - to.quantity;
-            canPlace = Mathf.Min(space, amount);
-        }
-        else
-        {
-            return 0;
-        }
+
+        if (to.IsEmpty) canPlace = Mathf.Min(item.maxStack, amount);
+        else if (to.item == item && !to.IsFull) canPlace = Mathf.Min(item.maxStack - to.quantity, amount);
+        else return 0;
 
         if (canPlace <= 0) return 0;
         canPlace = Mathf.Min(canPlace, from.quantity);
@@ -672,7 +571,6 @@ public class InventorySystem : MonoBehaviour
         return canPlace;
     }
 
-    // === Partial transfer: Shipping -> Shipping (merge only) ===
     public int TransferShippingPartial(int fromShipIndex, int toShipIndex, int amount)
     {
         if (amount <= 0) return 0;
@@ -685,21 +583,11 @@ public class InventorySystem : MonoBehaviour
         if (from.IsEmpty) return 0;
 
         ItemDefinition item = from.item;
-
         int canPlace = 0;
-        if (to.IsEmpty)
-        {
-            canPlace = Mathf.Min(item.maxStack, amount);
-        }
-        else if (to.item == item && !to.IsFull)
-        {
-            int space = item.maxStack - to.quantity;
-            canPlace = Mathf.Min(space, amount);
-        }
-        else
-        {
-            return 0;
-        }
+
+        if (to.IsEmpty) canPlace = Mathf.Min(item.maxStack, amount);
+        else if (to.item == item && !to.IsFull) canPlace = Mathf.Min(item.maxStack - to.quantity, amount);
+        else return 0;
 
         if (canPlace <= 0) return 0;
         canPlace = Mathf.Min(canPlace, from.quantity);
@@ -714,8 +602,6 @@ public class InventorySystem : MonoBehaviour
         return canPlace;
     }
 
-
-    // Merge into existing stacks, then first empty. Returns how many units moved.
     public int SmartMoveInventoryToShipping(int invIndex)
     {
         if (invIndex < 0 || invIndex >= slots.Count) return 0;
@@ -725,7 +611,6 @@ public class InventorySystem : MonoBehaviour
         int moved = 0;
         ItemDefinition item = from.item;
 
-        // 1) Fill existing stacks
         for (int i = 0; i < shippingSlots.Count && from.quantity > 0; i++)
         {
             var s = shippingSlots[i];
@@ -738,7 +623,6 @@ public class InventorySystem : MonoBehaviour
                 moved += add;
             }
         }
-        // 2) Fill empties
         for (int i = 0; i < shippingSlots.Count && from.quantity > 0; i++)
         {
             var s = shippingSlots[i];
@@ -771,7 +655,6 @@ public class InventorySystem : MonoBehaviour
         int moved = 0;
         ItemDefinition item = from.item;
 
-        // 1) Fill existing stacks
         for (int i = 0; i < slots.Count && from.quantity > 0; i++)
         {
             var s = slots[i];
@@ -784,7 +667,6 @@ public class InventorySystem : MonoBehaviour
                 moved += add;
             }
         }
-        // 2) Fill empties
         for (int i = 0; i < slots.Count && from.quantity > 0; i++)
         {
             var s = slots[i];
@@ -808,15 +690,12 @@ public class InventorySystem : MonoBehaviour
         return moved;
     }
 
-    // Optional: compact both containers by merging identical items across all slots.
     public int AutoStackAll()
     {
         int merged = 0;
 
-        // Helper local function to compact one list
         void Compact(List<InventorySlot> list)
         {
-            // Combine counts per item
             var counts = new Dictionary<ItemDefinition, int>();
             foreach (var s in list)
             {
@@ -825,13 +704,10 @@ public class InventorySystem : MonoBehaviour
                 counts[s.item] += s.quantity;
                 s.Clear();
             }
-            // Refill stacks
             foreach (var kv in counts)
             {
                 int remaining = kv.Value;
                 var item = kv.Key;
-
-                // Fill to full stacks
                 foreach (var s in list)
                 {
                     if (remaining <= 0) break;
@@ -844,7 +720,6 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        // Snapshot before to estimate merges? We’ll just trigger events.
         Compact(slots);
         Compact(shippingSlots);
 
@@ -853,6 +728,6 @@ public class InventorySystem : MonoBehaviour
         return merged;
     }
 
-    // Expose inventory slots (unchanged)
+    // Expose inventory slots
     public IReadOnlyList<InventorySlot> Slots => slots;
 }

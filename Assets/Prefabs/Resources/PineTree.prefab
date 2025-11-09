@@ -71,6 +71,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 0
   hitPoints: 5
+  itemID: wood
+  minAmount: 4
+  maxAmount: 8
   hitParticles: {fileID: 0}
   breakParticles: {fileID: 0}
   hitSound: {fileID: 8300000, guid: f69decbc05d90fe43b4b01791721d38a, type: 3}
