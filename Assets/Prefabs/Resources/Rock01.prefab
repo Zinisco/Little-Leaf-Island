@@ -82,6 +82,10 @@ MonoBehaviour:
   breakVolume: 0.7
   shakeAmplitude: 0.045
   shakeDuration: 0.08
+  hasRareDrop: 0
+  rareItem: {fileID: 11400000, guid: 000a30044e26e1c4187da84e52ddbbb4, type: 2}
+  rareChance: 10
+  rareReplaces: 0
 --- !u!114 &-8817655656093485653
 MonoBehaviour:
   m_ObjectHideFlags: 0

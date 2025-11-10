@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eb6da8d19b5689b4d93f4f6adad32639, type: 3}
-  m_Name: CarrotItemSO
+  m_Name: GemstoneSO
   m_EditorClassIdentifier: 
-  itemID: carrot
-  displayName: Carrot
+  itemID: gemstone
+  displayName: Gemstone
   maxStack: 99
   icon: {fileID: 0}
-  sellPrice: 5
+  sellPrice: 100

@@ -25,6 +25,13 @@ public class ResourceNode : MonoBehaviour
     [Range(0f, 0.15f)] public float shakeAmplitude = 0.045f;
     [Range(0.01f, 0.25f)] public float shakeDuration = 0.08f;
 
+    [Header("Rare Drop")]
+    public bool hasRareDrop = false;
+    public ItemDefinition rareItem;
+    [Range(0, 100)] public float rareChance = 5f;
+    public bool rareReplaces = false; // same logic as crops
+
+
     Transform shakeTarget;
     Vector3 baseWorldPos;
 
@@ -106,14 +113,27 @@ public class ResourceNode : MonoBehaviour
         if (breakSound != null)
             AudioSource.PlayClipAtPoint(breakSound, transform.position, breakVolume);
 
-        // Roll random amount
-        int amount = Random.Range(minAmount, maxAmount + 1);
+        bool droppedNormal = false;
 
-        // Add to inventory
-        InventorySystem.Add(itemID, amount);
+        // Normal drop unless rare replaces it
+        if (!rareReplaces || !hasRareDrop)
+        {
+            int amount = Random.Range(minAmount, maxAmount + 1);
+            InventorySystem.Add(itemID, amount);
+            droppedNormal = true;
+        }
 
-        Debug.Log($"Harvested {amount}x {itemID}");
+        // Rare drop
+        // Rare drop
+        if (hasRareDrop && rareItem != null && Random.Range(0f, 100f) <= rareChance)
+        {
+            InventorySystem.Add(rareItem.itemID, 1);
+        }
+
+
+        Debug.Log($"Node harvested. Normal={droppedNormal}");
 
         Destroy(gameObject);
     }
+
 }
