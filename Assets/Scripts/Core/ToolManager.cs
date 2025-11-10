@@ -181,25 +181,4 @@ public class ToolManager : MonoBehaviour
         // No marker found
         return fallback;
     }
-
-    // -----------------------------
-    // Debug overlay
-    // -----------------------------
-    void OnGUI()
-    {
-        if (!showHotspotDebug) return;
-
-        Event e = Event.current;
-        if (e == null) return;
-
-        Vector2 mousePos = e.mousePosition;
-
-        // Draw a small crosshair at the *actual* click pixel Unity sees
-        GUI.color = Color.red;
-        GUI.DrawTexture(new Rect(mousePos.x - 2, mousePos.y - 2, 4, 4), Texture2D.whiteTexture);
-
-        GUI.color = Color.white;
-        GUI.Label(new Rect(mousePos.x + 10, mousePos.y + 10, 320, 30),
-            $"Click Pixel: {mousePos}");
-    }
 }
