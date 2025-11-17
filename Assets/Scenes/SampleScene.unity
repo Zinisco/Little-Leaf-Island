@@ -1410,6 +1410,55 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   highlightPrefab: {fileID: 6721304890296770872, guid: 830ad838215dc1c4eb65ef3a58d7c601, type: 3}
+--- !u!1 &337827013
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 337827014}
+  - component: {fileID: 337827015}
+  m_Layer: 0
+  m_Name: PlaceableItemPlacer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &337827014
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 337827013}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 938258268}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &337827015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 337827013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4f759b8fca692241825e50b5272a343, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 64
+  maxPlaceDistance: 100
+  rotationSpeed: 90
 --- !u!1 &349032182
 GameObject:
   m_ObjectHideFlags: 0
@@ -3342,6 +3391,7 @@ Transform:
   - {fileID: 240108725}
   - {fileID: 68198712}
   - {fileID: 304754832}
+  - {fileID: 337827014}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1016232559
@@ -4301,7 +4351,6 @@ MonoBehaviour:
   cursorAxe: {fileID: 2800000, guid: 96c081084e97077478c89ab28797a5ee, type: 3}
   cursorPickaxe: {fileID: 2800000, guid: 3e90db8aa8b7fc743b2392574c8913e9, type: 3}
   cursorGrabClosed: {fileID: 2800000, guid: 20259a65f355fe54d958dd0b4870f8c5, type: 3}
-  showHotspotDebug: 1
   fallbackHotspot: {x: 0, y: 0}
   grabFallbackHotspot: {x: 16, y: 16}
 --- !u!4 &1646828343
@@ -4568,6 +4617,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea270d6eb64b2f34a943f016a704fb28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  panel: {fileID: 1762584594}
   recipeSlotPrefab: {fileID: 4688759752088899359, guid: 8e40c9bf08526104285d397ed5503b37, type: 3}
   recipeListParent: {fileID: 392709172}
   recipes:

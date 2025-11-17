@@ -269,15 +269,15 @@ public class Tile : MonoBehaviour
             Destroy(currentVisual);
 
         GameObject prefab =
-    state == State.Decor ? TileManager.I.decorGrassPrefab :
-    state == State.WetSoil ? TileManager.I.wetSoilPrefab :
-    state == State.Soil ? TileManager.I.soilPrefab :
-    TileManager.I.grassPrefab;
-
+            state == State.Decor ? TileManager.I.decorGrassPrefab :
+            state == State.WetSoil ? TileManager.I.wetSoilPrefab :
+            state == State.Soil ? TileManager.I.soilPrefab :
+            TileManager.I.grassPrefab;
 
         currentVisual = Instantiate(prefab, transform.position, Quaternion.identity, transform);
 
         UpdateCropAnchor();
+        UpdatePlacementAnchor();
     }
 
 
@@ -439,6 +439,24 @@ public class Tile : MonoBehaviour
             );
         }
     }
+
+    [HideInInspector] public Transform placementAnchor;
+
+    public void UpdatePlacementAnchor()
+    {
+        placementAnchor = null;
+        if (currentVisual != null)
+        {
+            // Try named child first
+            var direct = currentVisual.transform.Find("PlacementAnchor");
+            if (direct != null) { placementAnchor = direct; return; }
+
+            // Search children if necessary
+            foreach (var t in currentVisual.GetComponentsInChildren<Transform>(true))
+                if (t.name == "PlacementAnchor") { placementAnchor = t; return; }
+        }
+    }
+
 
     public int GetGrowthStage() => growthStage;
     public float GetRandomRotation() => randomYRotation;

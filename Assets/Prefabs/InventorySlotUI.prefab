@@ -234,6 +234,7 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 0.35}
   hoverColor: {r: 1, g: 1, b: 1, a: 0.7}
   colorFadeSpeed: 12
+  clickHoldThreshold: 0.25
 --- !u!1 &7174217532507756473
 GameObject:
   m_ObjectHideFlags: 0

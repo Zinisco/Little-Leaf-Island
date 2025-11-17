@@ -27,9 +27,6 @@ public class ToolManager : MonoBehaviour
     [Header("Camera Grab Cursor")]
     public Texture2D cursorGrabClosed;
 
-    [Header("Debug")]
-    [SerializeField] bool showHotspotDebug = true;
-
     // Optional fallbacks if no marker found
     [SerializeField] Vector2 fallbackHotspot = Vector2.zero;
     [SerializeField] Vector2 grabFallbackHotspot = new Vector2(16, 16);
@@ -86,6 +83,9 @@ public class ToolManager : MonoBehaviour
     public void CycleTool(float direction)
     {
         if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
+            return;
+
+        if(CraftingUI.I != null && CraftingUI.IsOpen)
             return;
 
         int toolCount = System.Enum.GetValues(typeof(Tool)).Length;

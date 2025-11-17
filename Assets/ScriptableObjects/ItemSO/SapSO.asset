@@ -16,4 +16,7 @@ MonoBehaviour:
   displayName: Sap
   maxStack: 99
   icon: {fileID: 0}
-  sellPrice: 20
+  sellPrice: 30
+  isPlaceable: 0
+  placeablePrefab: {fileID: 0}
+  placementYOffset: 0.02

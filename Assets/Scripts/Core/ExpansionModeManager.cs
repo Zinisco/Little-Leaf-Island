@@ -39,17 +39,22 @@ public class ExpansionModeManager : MonoBehaviour
 
     void Update()
     {
-        if (InventoryUIController.IsOpen)
-            return; // Ignore all expansion input when inventory is open
+        // --- Prevent toggling expansion mode while inventory or crafting is open ---
+        if ((InventoryUIController.IsOpen || CraftingUI.IsOpen))
+            return; // don’t process the toggle key, but keep expansion active if it already is
 
+        // --- Allow toggling only when no UI is open ---
         if (Input.GetKeyDown(toggleKey))
             ToggleExpansionMode();
 
+        // --- Expansion logic still runs if active ---
         if (!isActive) return;
 
         HandleHoverHighlight();
         HandleTileClick();
     }
+
+
 
     void ToggleExpansionMode()
     {

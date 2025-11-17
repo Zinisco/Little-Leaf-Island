@@ -1,9 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 public class CraftingUI : MonoBehaviour
 {
     public static CraftingUI I;
+
+    public static bool IsOpen { get; private set; }
+
+    [SerializeField] private GameObject panel; // your crafting UI root
 
     [Header("List Setup")]
     public GameObject recipeSlotPrefab;    // Prefab with CraftingRecipeSlotUI
@@ -16,6 +21,13 @@ public class CraftingUI : MonoBehaviour
     private CraftingRecipe _selected;
 
     void Awake() => I = this;
+
+    void Update()
+    {
+        // Close crafting with Escape key
+        if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+            Toggle();
+    }
 
     void OnEnable()
     {
@@ -78,21 +90,26 @@ public class CraftingUI : MonoBehaviour
 
     bool IsSelected(CraftingRecipe r) => _selected == r;
 
-    // Called from CraftingManager (press C)
     public void Toggle()
     {
-        bool next = !gameObject.activeSelf;
-        gameObject.SetActive(next);
+        bool open = !IsOpen;
+        panel.SetActive(open);
+        IsOpen = open;
 
-        if (next)
+        if (TimeManager.I != null)
+            TimeManager.I.SetPaused(open);
+
+        if (open)
         {
-            BuildList();
-            if (_selected == null) AutoSelectFirst();
-            else
-            {
-                RepaintSelection();
-                if (detailsPanel) detailsPanel.Show(_selected); // <-- ensures ingredients appear
-            }
+            // Prevent expansion mode toggle while crafting
+            if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
+                Debug.Log("Crafting opened while expansion active (still allowed, just blocks toggle key).");
+
+            ToolManager.I.ForceDefaultCursor();
+        }
+        else if (!ExpansionModeManager.I || !ExpansionModeManager.I.IsActive)
+        {
+            ToolManager.I.ApplyCursor();
         }
     }
 

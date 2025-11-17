@@ -97,17 +97,43 @@ public class TileManager : MonoBehaviour
         if (tiles.ContainsKey((x, y))) return;
 
         Vector3 pos = GridToWorld(x, y);
+
+        // --- Create EMPTY tile root ---
         GameObject tileGO = new GameObject($"Tile_{x}_{y}");
+        tileGO.transform.SetParent(islandRoot);
         tileGO.transform.position = pos;
-        tileGO.transform.parent = islandRoot;
+        tileGO.layer = LayerMask.NameToLayer("Tile");
 
+        // --- Add Tile component ---
         Tile tile = tileGO.AddComponent<Tile>();
-        tile.x = x; tile.y = y;
+        tile.x = x;
+        tile.y = y;
         tile.state = Tile.State.Grass;
-        tile.InitializeVisual(Instantiate(grassPrefab, pos, Quaternion.identity, tileGO.transform));
 
+        // --- Add the grass visual as child AND register it as currentVisual ---
+        GameObject visual = Instantiate(grassPrefab, tileGO.transform);
+        visual.transform.localPosition = Vector3.zero;
+
+        foreach (Transform t in visual.GetComponentsInChildren<Transform>(true))
+            t.gameObject.layer = LayerMask.NameToLayer("Tile");
+
+        tile.currentVisual = visual;  
+        tile.UpdateCropAnchor();
+        tile.UpdatePlacementAnchor();
+
+        // --- Generate surface collider ---
+        Renderer r = visual.GetComponentInChildren<Renderer>();
+        float topY = r.bounds.max.y;
+
+        BoxCollider col = tileGO.AddComponent<BoxCollider>();
+        col.size = new Vector3(tileSize, 0.05f, tileSize);
+        col.center = new Vector3(0f, topY - tileGO.transform.position.y + 0.025f, 0f);
+
+        // Store tile
         tiles.Add((x, y), tile);
     }
+
+
 
     void SpawnHouse()
     {
@@ -147,7 +173,7 @@ public class TileManager : MonoBehaviour
 
 
 
-    Vector3 GridToWorld(int x, int y) => new Vector3(x * tileSize, 0f, y * tileSize);
+    public Vector3 GridToWorld(int x, int y) => new Vector3(x * tileSize, 0f, y * tileSize);
     public bool HasTile(int x, int y) => tiles.ContainsKey((x, y));
     public Dictionary<(int, int), Tile> GetAllTiles() => tiles;
 
@@ -306,93 +332,6 @@ public class TileManager : MonoBehaviour
         pending.Remove(key);
     }
 
-
-    // ------------------------------------------------------------
-    // Weighted random model picker with scaled adjacency penalty
-    // ------------------------------------------------------------
-    GameObject PickSoftAvoidPrefab(GameObject[] options, Vector2Int center, ResourceNode.ResourceType type, System.Random rng)
-    {
-        // Step 1: Base weight for each model
-        float[] weights = new float[options.Length];
-        for (int i = 0; i < options.Length; i++)
-            weights[i] = 1f; // all start equally weighted
-
-        // Step 2: Check cardinal neighbors (N,S,E,W)
-        Vector2Int[] dirs = new Vector2Int[]
-        {
-        new Vector2Int(1,0),
-        new Vector2Int(-1,0),
-        new Vector2Int(0,1),
-        new Vector2Int(0,-1)
-        };
-
-        // Track neighbor prefab indices
-        List<int> neighborIndices = new List<int>();
-
-        foreach (var dir in dirs)
-        {
-            Vector2Int neighborKey = center + dir;
-            if (pending.TryGetValue(neighborKey, out var neighbor))
-            {
-                // Only care about same resource type
-                if (neighbor.hasResource && neighbor.type == type && neighbor.hp > 0)
-                {
-                    // Derive which prefab index was chosen for that neighbor
-                    // by re-seeding RNG the same way (for deterministic generation)
-                    var nrng = CoordRng(neighborKey);
-                    int index = nrng.Next(options.Length);
-                    neighborIndices.Add(index);
-                }
-            }
-        }
-
-        // Step 3: Apply scaled penalties
-        // First duplicate = -0.4, second = -0.25 total
-        foreach (int matchIndex in neighborIndices)
-        {
-            int count = neighborIndices.FindAll(i => i == matchIndex).Count;
-            if (count >= 1)
-                weights[matchIndex] -= 0.4f;
-            if (count >= 2)
-                weights[matchIndex] -= 0.25f;
-        }
-
-        // Step 4: Clamp minimum weights to small positive value
-        for (int i = 0; i < weights.Length; i++)
-            if (weights[i] < 0.01f)
-                weights[i] = 0.01f;
-
-        // Step 5: Normalize so all weights sum to 1
-        float total = 0f;
-        foreach (float w in weights) total += w;
-        if (total > 0f)
-        {
-            for (int i = 0; i < weights.Length; i++)
-                weights[i] /= total;
-        }
-        else
-        {
-            // Fallback: all weights zero or negative ? pure random
-            int fallbackIndex = rng.Next(options.Length);
-            return options[fallbackIndex];
-        }
-
-        // Step 6: Weighted random selection
-        double roll = rng.NextDouble();
-        double cumulative = 0.0;
-        for (int i = 0; i < options.Length; i++)
-        {
-            cumulative += weights[i];
-            if (roll <= cumulative)
-                return options[i];
-        }
-
-        // Safety fallback
-        return options[rng.Next(options.Length)];
-    }
-
-
-
     public bool TryBuyTile(int x, int y)
     {
         bool adjacentToOwned =
@@ -532,6 +471,13 @@ public class TileManager : MonoBehaviour
 
             pending[key] = pr;
         }
+    }
+
+    public bool HasTileAtWorld(Vector3 worldPos)
+    {
+        int x = Mathf.RoundToInt(worldPos.x / tileSize);
+        int y = Mathf.RoundToInt(worldPos.z / tileSize);
+        return HasTile(x, y);
     }
 
 }

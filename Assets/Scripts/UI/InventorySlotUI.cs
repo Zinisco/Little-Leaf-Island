@@ -1,12 +1,13 @@
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class InventorySlotUI : MonoBehaviour,
     IPointerEnterHandler, IPointerExitHandler,
     IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler,
-    IPointerClickHandler   // <-- NEW
+    IPointerClickHandler 
 {
     [SerializeField] Image slotImage;
     [SerializeField] Image iconImage;
@@ -18,6 +19,12 @@ public class InventorySlotUI : MonoBehaviour,
     [SerializeField] Color normalColor = new Color(1, 1, 1, 0.35f);
     [SerializeField] Color hoverColor = new Color(1, 1, 1, 0.6f);
     [SerializeField] float colorFadeSpeed = 12f;
+
+    [SerializeField] private float clickHoldThreshold = 0.25f;
+    private float clickStartTime;
+    private bool pointerDown;
+
+
 
     Vector3 originalScale;
     bool isHovered;
@@ -96,6 +103,23 @@ public class InventorySlotUI : MonoBehaviour,
         var inv = InventorySystem.I;
         var dc = InventoryDragController.I;
 
+        // Quick use of placeable items
+        if (eventData.button == PointerEventData.InputButton.Left)
+        {
+            var slot = InventorySystem.I.Slots[slotIndex];
+            if (!slot.IsEmpty && slot.item.isPlaceable && !InventoryDragController.I.IsDragging)
+            {
+                Debug.Log($"Clicked placeable {slot.item.displayName}");
+                InventoryUIController.CloseInventory();
+                InventoryUIController.Instance.StartCoroutine(
+                    InventoryUIController.Instance.DelayedStartPlacement(slot.item)
+                );
+
+                return;
+            }
+        }
+
+
         // --- SHIFT + LEFT: smart move to Shipping ---
         if (eventData.button == PointerEventData.InputButton.Left && dc.IsShiftDown && !dc.IsDragging)
         {
@@ -157,8 +181,11 @@ public class InventorySlotUI : MonoBehaviour,
     // ----- Drag & Drop (existing full-drag path) -----
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // If partial-drag is active, ignore the classic drag (we're using click-to-drop flow)
-        if (InventoryDragController.I.isPartial) return;
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+
+        // Don’t start drag if click was too short — placement will handle that
+        if (Time.unscaledTime - clickStartTime < clickHoldThreshold)
+            return;
 
         var slot = InventorySystem.I.Slots[slotIndex];
         if (slot.IsEmpty) return;
@@ -170,6 +197,8 @@ public class InventorySlotUI : MonoBehaviour,
         iconImage.enabled = false;
         qtyText.text = "";
     }
+
+
 
     public void OnDrag(PointerEventData eventData) { }
 
@@ -214,5 +243,45 @@ public class InventorySlotUI : MonoBehaviour,
             Refresh();
         }
     }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+        pointerDown = true;
+        clickStartTime = Time.unscaledTime;
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (!pointerDown || eventData.button != PointerEventData.InputButton.Left) return;
+        pointerDown = false;
+
+        Debug.Log($"PointerUp fired on slot {slotIndex}");
+
+        float held = Time.unscaledTime - clickStartTime;
+        var slot = InventorySystem.I.Slots[slotIndex];
+        if (slot.IsEmpty) return;
+
+        // Short click = placeable use
+        if (held < clickHoldThreshold && slot.item.isPlaceable)
+        {
+            InventoryUIController.CloseInventory();
+            StartCoroutine(StartPlacementNextFrame(slot.item));
+
+
+            return;
+        }
+
+        // otherwise it’s a normal release (drag handled already)
+    }
+
+    private System.Collections.IEnumerator StartPlacementNextFrame(ItemDefinition item)
+    {
+        yield return null; // wait one frame so the UI fully hides first
+        var placer = FindFirstObjectByType<PlaceableItemPlacer>();
+        if (placer != null)
+            placer.StartPlacing(item);
+    }
+
 
 }

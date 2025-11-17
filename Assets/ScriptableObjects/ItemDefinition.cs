@@ -15,7 +15,9 @@ public class ItemDefinition : ScriptableObject
 
     [Header("Economy")]
     public int sellPrice = 1;     // coins when sold (per unit)
-    // Optional future fields:
-    // public int purchasePrice;
-    // public ItemCategory category;
+
+    [Header("Placeable Settings")]
+    public bool isPlaceable = false;
+    public GameObject placeablePrefab;  // e.g., your StorageChest prefab
+    public float placementYOffset = 0.02f;
 }
