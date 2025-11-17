@@ -10,9 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 3178866867026906505}
   - component: {fileID: 2795304313182510648}
+  - component: {fileID: 5467059557059109643}
   m_Layer: 0
   m_Name: StorageChest
-  m_TagString: Untagged
+  m_TagString: Placeable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -54,6 +55,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 2, z: 2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5467059557059109643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 743723784163379829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83209cc5be5b6404d85183ed3a1979e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  definition: {fileID: 11400000, guid: 628b722f545864744be2e9ce6f5d9495, type: 2}
 --- !u!1001 &1498658780165053535
 PrefabInstance:
   m_ObjectHideFlags: 0

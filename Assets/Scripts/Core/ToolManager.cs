@@ -65,6 +65,9 @@ public class ToolManager : MonoBehaviour
         if (ExpansionModeManager.I != null && ExpansionModeManager.I.IsActive)
             return;
 
+        if (PlaceableItemPlacer.I && PlaceableItemPlacer.I.IsPlacing)
+            return;
+
         // RMB or MMB held = Camera grab cursor
         if (Input.GetMouseButton(1) || Input.GetMouseButton(2))
         {
@@ -86,6 +89,9 @@ public class ToolManager : MonoBehaviour
             return;
 
         if(CraftingUI.I != null && CraftingUI.IsOpen)
+            return;
+
+        if (PlaceableItemPlacer.I && PlaceableItemPlacer.I.IsPlacing)
             return;
 
         int toolCount = System.Enum.GetValues(typeof(Tool)).Length;
