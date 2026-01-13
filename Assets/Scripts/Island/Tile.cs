@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using static XPSystem;
 
 public class Tile : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class Tile : MonoBehaviour
     int growthStage = 0;           // which visual stage index
     int lastShovelDay;   // last in-game day shovel was used
     int lastWaterDay;    // last in-game day tile was watered
-
+    [SerializeField] int xpOnHarvest = 5;
 
     GameObject plantedObject = null;
     Transform cropAnchor;
@@ -174,6 +175,8 @@ public class Tile : MonoBehaviour
     {
         if (crop == null) return;
         if (growthStage < crop.StageCount - 1) return;
+
+        XPSystem.I?.AddXP(xpOnHarvest);
 
         // ---- Normal output ----
         bool gaveNormal = false;

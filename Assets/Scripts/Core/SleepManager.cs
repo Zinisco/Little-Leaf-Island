@@ -31,7 +31,8 @@ public class SleepManager : MonoBehaviour
 
     IEnumerator SleepSequence()
     {
-        // (C1) Fully visible world – optionally: disable movement/input here if needed
+        // SELL SHIPPING BIN AT MORNING
+        InventorySystem.I?.SellShippingContents();
 
         // Kick off the visible fast-forward to next sunrise
         yield return TimeManager.I.FastForwardToNextSunrise(baseSkipSeconds);

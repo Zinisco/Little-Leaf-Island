@@ -23,10 +23,27 @@ public class TileManager : MonoBehaviour
 
     [Header("HouseFeatures")]
     public GameObject housePrefab;
-    public Vector2Int houseOrigin = new Vector2Int(2, -1); // bottom-left tile of house
-    public Vector2Int houseSize = new Vector2Int(3, 3); // width = 3, height = 2
+    public Vector2Int houseOrigin = new Vector2Int(3, -2); // bottom-left tile of house
+    public Vector2Int houseSize = new Vector2Int(5, 5); // width = 3, height = 2
     public Vector3 houseOffset = new Vector3(-1, 1.2f, -1);
     public float houseRotationY = 90f;
+
+    [Header("Dirt Block House")]
+    public bool useDirtBlockHouse = true;
+    public GameObject dirtBlockPrefab;     // a cube-ish dirt block prefab (recommended)
+    public Material dirtBlockMaterial;     // optional (used if prefab is null)
+    public Vector3 dirtHouseLocalOffset = Vector3.zero; // fine-tune if needed
+
+    [Header("TraderDock")]
+    public Vector2Int rightPadSize = new Vector2Int(3, 3);
+    public Vector2Int rightPadOffsetFromHouse = new Vector2Int(0, 0);
+    // 0,0 means aligned with houseOrigin.y (bottom edge)
+    
+    [Header("Trader Spawn Reserve (no expansion tiles here)")]
+    public Vector2Int traderReserveSize = new Vector2Int(3, 3);
+
+    // Offset relative to the reserve origin (which starts immediately to the RIGHT of the dock pad)
+    public Vector2Int traderReserveOffsetFromPad = new Vector2Int(0, 0);
 
 
     [Header("Expansion Settings")]
@@ -82,15 +99,15 @@ public class TileManager : MonoBehaviour
 
     }
 
-
     void Start()
     {
-        for (int x = -1; x <= 1; x++)
-            for (int y = -1; y <= 1; y++)
+        for (int x = -2; x <= 2; x++)
+            for (int y = -2; y <= 2; y++)
                 AddTile(x, y);
 
         SpawnHouse();
     }
+
 
     public void AddTile(int x, int y)
     {
@@ -137,7 +154,7 @@ public class TileManager : MonoBehaviour
 
     void SpawnHouse()
     {
-        // Create and mark the tiles under the house
+        // --- house footprint tiles ---
         for (int x = 0; x < houseSize.x; x++)
         {
             for (int y = 0; y < houseSize.y; y++)
@@ -153,7 +170,10 @@ public class TileManager : MonoBehaviour
             }
         }
 
-        // Position is the center of the footprint
+        // --- NEW: 3x3 pad to the RIGHT of the house ---
+        SpawnRightDecorPad();
+
+        // --- spawn the house model ---
         Vector3 basePos = GridToWorld(houseOrigin.x, houseOrigin.y);
         Vector3 centerOffset = new Vector3(
             (houseSize.x * tileSize) / 2f,
@@ -161,16 +181,40 @@ public class TileManager : MonoBehaviour
             (houseSize.y * tileSize) / 2f
         );
 
-        Quaternion rot = Quaternion.Euler(0, houseRotationY, 0);
+        Vector3 houseCenter = basePos + centerOffset + houseOffset;
 
-        Instantiate(
-            housePrefab,
-            basePos + centerOffset + houseOffset,
-            rot,
-            islandRoot
-        );
+        if (useDirtBlockHouse)
+        {
+            SpawnDirtBlockHouse(houseCenter, houseRotationY);
+        }
+        else
+        {
+            Quaternion rot = Quaternion.Euler(0, houseRotationY, 0);
+            Instantiate(housePrefab, houseCenter, rot, islandRoot);
+        }
     }
 
+    void SpawnRightDecorPad()
+    {
+        // pad starts immediately to the right of the house footprint
+        int padOriginX = houseOrigin.x + houseSize.x + rightPadOffsetFromHouse.x;
+        int padOriginY = houseOrigin.y + rightPadOffsetFromHouse.y;
+
+        for (int x = 0; x < rightPadSize.x; x++)
+        {
+            for (int y = 0; y < rightPadSize.y; y++)
+            {
+                int gx = padOriginX + x;
+                int gy = padOriginY + y;
+
+                if (!tiles.ContainsKey((gx, gy)))
+                    AddTile(gx, gy);
+
+                tiles[(gx, gy)].state = Tile.State.Decor;
+                tiles[(gx, gy)].UpdateVisual();
+            }
+        }
+    }
 
 
     public Vector3 GridToWorld(int x, int y) => new Vector3(x * tileSize, 0f, y * tileSize);
@@ -192,6 +236,18 @@ public class TileManager : MonoBehaviour
     PendingResource GetOrGeneratePending(Vector2Int p)
     {
         if (pending.TryGetValue(p, out var pr)) return pr;
+
+        if (IsInTraderReserve(p))
+        {
+            var blocked = new PendingResource
+            {
+                hasResource = false,
+                hp = 0,
+                prefabIndex = -1
+            };
+            pending[p] = blocked;
+            return blocked;
+        }
 
         var rng = CoordRng(p);
         bool spawns = rng.NextDouble() < spawnChance;
@@ -334,6 +390,12 @@ public class TileManager : MonoBehaviour
 
     public bool TryBuyTile(int x, int y)
     {
+        if (IsInTraderReserve(new Vector2Int(x, y)))
+        {
+            Debug.Log("That area is reserved for the Trader dock spawn.");
+            return false;
+        }
+
         bool adjacentToOwned =
             tiles.ContainsKey((x + 1, y)) || tiles.ContainsKey((x - 1, y)) ||
             tiles.ContainsKey((x, y + 1)) || tiles.ContainsKey((x, y - 1));
@@ -379,7 +441,7 @@ public class TileManager : MonoBehaviour
             };
             foreach (var n in neighbors)
             {
-                if (!tiles.ContainsKey((n.x, n.y)) && !result.Contains(n))
+                if (!tiles.ContainsKey((n.x, n.y)) && !result.Contains(n) && !IsInTraderReserve(n))
                     result.Add(n);
             }
         }
@@ -479,5 +541,105 @@ public class TileManager : MonoBehaviour
         int y = Mathf.RoundToInt(worldPos.z / tileSize);
         return HasTile(x, y);
     }
+
+    void SpawnDirtBlockHouse(Vector3 centerWorld, float rotationY)
+    {
+        GameObject root = new GameObject("DirtBlockHouse");
+        root.transform.SetParent(islandRoot);
+
+        float block = tileSize;
+        Quaternion rot = Quaternion.Euler(0f, rotationY, 0f);
+        Vector3 baseCenter = centerWorld + rot * dirtHouseLocalOffset;
+
+        const int SX = 5;   // width (x)
+        const int SZ = 5;   // depth (z)
+        const int SY = 3;   // height (y)  <<< 3 blocks tall
+
+        int midX = SX / 2;  // 2
+        int midZ = SZ / 2;  // 2
+
+        // Doors: 2 blocks tall, centered, on opposite sides (north/south)
+        bool IsDoorCutout(int x, int y, int z)
+        {
+            if (x != midX) return false;          // centered in X
+            if (y != 0 && y != 1) return false;   // 2 blocks tall
+            return (z == 0 || z == SZ - 1);       // south/north faces
+        }
+
+        // Hollow: remove interior AIR blocks (not floor/roof/walls)
+        bool IsInteriorAir(int x, int y, int z)
+        {
+            return (x > 0 && x < SX - 1) &&
+                   (y > 0 && y < SY - 1) &&
+                   (z > 0 && z < SZ - 1);
+        }
+
+        // Remove the interior floor blocks (leave the outer ring as the "foundation")
+        bool IsInteriorFloor(int x, int y, int z)
+        {
+            if (y != 0) return false;
+            return (x > 0 && x < SX - 1) && (z > 0 && z < SZ - 1);
+        }
+
+
+        for (int x = 0; x < SX; x++)
+            for (int y = 0; y < SY; y++)
+                for (int z = 0; z < SZ; z++)
+                {
+                    if (IsDoorCutout(x, y, z)) continue;
+                    if (IsInteriorAir(x, y, z)) continue;
+                    if (IsInteriorFloor(x, y, z)) continue;
+
+                    // Center footprint around (0,0,0)
+                    float lx = (x - midX) * block;
+                    float lz = (z - midZ) * block;
+
+                    // Stack upward (each cube centered)
+                    float ly = (block * 0.5f) + (y * block);
+
+                    Vector3 localPos = new Vector3(lx, ly, lz);
+                    Vector3 worldPos = baseCenter + rot * localPos;
+
+                    GameObject b;
+                    if (dirtBlockPrefab != null)
+                    {
+                        b = Instantiate(dirtBlockPrefab, worldPos, rot, root.transform);
+                    }
+                    else
+                    {
+                        b = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        b.transform.SetParent(root.transform);
+                        b.transform.SetPositionAndRotation(worldPos, rot);
+                        b.transform.localScale = Vector3.one * block;
+                    }
+
+                    b.name = $"DirtBlock_{x}_{y}_{z}";
+                }
+    }
+
+    Vector2Int GetRightPadOrigin()
+    {
+        int padOriginX = houseOrigin.x + houseSize.x + rightPadOffsetFromHouse.x;
+        int padOriginY = houseOrigin.y + rightPadOffsetFromHouse.y;
+        return new Vector2Int(padOriginX, padOriginY);
+    }
+
+    Vector2Int GetTraderReserveOrigin()
+    {
+        // reserve starts immediately to the RIGHT of the dock pad
+        var pad = GetRightPadOrigin();
+        int rx = pad.x + rightPadSize.x + traderReserveOffsetFromPad.x;
+        int ry = pad.y + traderReserveOffsetFromPad.y;
+        return new Vector2Int(rx, ry);
+    }
+
+    bool IsInTraderReserve(Vector2Int p)
+    {
+        var o = GetTraderReserveOrigin();
+
+        return p.x >= o.x && p.x < o.x + traderReserveSize.x &&
+               p.y >= o.y && p.y < o.y + traderReserveSize.y;
+    }
+
 
 }

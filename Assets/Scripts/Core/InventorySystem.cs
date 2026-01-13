@@ -43,10 +43,6 @@ public class InventorySystem : MonoBehaviour
         var seed = ItemDatabase.I?.GetItemByID("carrot_seed");
         if (seed != null) AddItem(seed, 9);
         else Debug.LogWarning("ItemDatabase missing 'carrot_seed'");
-
-        var chest = ItemDatabase.I?.GetItemByID("storage_chest");
-        if (chest != null) AddItem(chest, 1);
-        else Debug.LogWarning("ItemDatabase missing 'storage_chest'");
     }
 
     // ----------------------------

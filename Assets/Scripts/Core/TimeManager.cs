@@ -34,17 +34,24 @@ public class TimeManager : MonoBehaviour
     // --- NEW: fast-forward state ---
     public bool IsFastForwarding { get; private set; }
 
+    bool crossedSunriseThisFF;
+
+
     void Awake()
     {
         I = this;
         timeScalePerSecond = 24f / Mathf.Max(1f, dayLengthMinutes * 60f);
         CurrentTime = Mathf.Repeat(startHour, 24f);
 
-        // Initial phase notify
-        OnDayChanged?.Invoke();
+        // Initial phase + tick only (no day increment)
         OnPhaseChanged?.Invoke(IsDaytime);
-        if (IsAtOrPastSunrise(CurrentTime)) OnSunrise?.Invoke();
+        OnClockTick?.Invoke(CurrentTime);
+
+        // Optional: if you want crops to grow immediately when loading at/after sunrise
+        if (IsAtOrPastSunrise(CurrentTime))
+            OnSunrise?.Invoke();
     }
+
 
     void Update()
     {
@@ -83,6 +90,7 @@ public class TimeManager : MonoBehaviour
 
     IEnumerator FastForwardRoutine(float baseDurationSeconds)
     {
+        crossedSunriseThisFF = false;
         IsFastForwarding = true;
 
         // How many hours to get to the *next* sunrise (always at least a tiny bit, never 0)
@@ -125,15 +133,12 @@ public class TimeManager : MonoBehaviour
         CurrentTime = Mathf.Repeat(sunriseHour, 24f);
 
         // If we didn’t cross sunrise in loop (very short duration), fire it now.
-        if (!CrossedForward(prevFinal, CurrentTime, sunriseHour))
+        if (!crossedSunriseThisFF)
         {
             DayNumber++;
             OnDayChanged?.Invoke();
             OnSunrise?.Invoke();
-
-            bool wasDay = (prevFinal >= sunriseHour && prevFinal < sunsetHour);
-            bool isDay = IsDaytime;
-            if (isDay != wasDay) OnPhaseChanged?.Invoke(isDay);
+            OnPhaseChanged?.Invoke(IsDaytime);
         }
 
         OnClockTick?.Invoke(CurrentTime);
@@ -142,9 +147,9 @@ public class TimeManager : MonoBehaviour
 
     void TickEventsDuringManualAdvance(float prevTime, float nowTime)
     {
-        // Handle sunrise crossing while we scrub time
         if (CrossedForward(prevTime, nowTime, sunriseHour))
         {
+            crossedSunriseThisFF = true;
             DayNumber++;
             OnDayChanged?.Invoke();
             OnSunrise?.Invoke();
@@ -154,6 +159,7 @@ public class TimeManager : MonoBehaviour
         bool isDay = IsDaytime;
         if (isDay != wasDay) OnPhaseChanged?.Invoke(isDay);
     }
+
 
     float HoursUntilNextSunrise(float t)
     {
@@ -171,7 +177,8 @@ public class TimeManager : MonoBehaviour
         return prev < thresholdHour || now >= thresholdHour; // wrapped
     }
 
-    static bool IsAtOrPastSunrise(float t) => t >= 0; // placeholder
+    bool IsAtOrPastSunrise(float t) => t >= sunriseHour;
+
 
     // Public UI helpers
     public string GetCurrentTimeFormatted()

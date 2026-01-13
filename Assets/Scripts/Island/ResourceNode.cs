@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using static XPSystem;
 
 public class ResourceNode : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class ResourceNode : MonoBehaviour
     public string itemID;          // e.g. "wood", "stone"
     public int minAmount = 2;      // e.g. 2
     public int maxAmount = 4;      // e.g. 4
+
+    public int xpOnHarvest = 10; // set per node prefab (tree/rock)
 
     [Header("FX")]
     public ParticleSystem hitParticles;
@@ -124,12 +127,12 @@ public class ResourceNode : MonoBehaviour
         }
 
         // Rare drop
-        // Rare drop
         if (hasRareDrop && rareItem != null && Random.Range(0f, 100f) <= rareChance)
         {
             InventorySystem.Add(rareItem.itemID, 1);
         }
 
+        XPSystem.I?.AddXP(xpOnHarvest);
 
         Debug.Log($"Node harvested. Normal={droppedNormal}");
 
